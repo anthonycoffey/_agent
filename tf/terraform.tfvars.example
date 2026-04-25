@@ -1,0 +1,23 @@
+# Copy this to terraform.tfvars and fill in.
+# terraform.tfvars is gitignored (see .gitignore).
+
+project_id  = "bugsy-ai"
+region      = "us-central1"
+zone        = "us-central1-a"
+owner_label = "ac"
+
+vm_name           = "agent-vm"
+machine_type      = "n2-standard-4"
+boot_disk_size_gb = 200
+
+# Get this from https://login.tailscale.com/admin/settings/keys
+# Recommended: reusable, ephemeral, pre-approved, with tag:agent
+tailscale_auth_key = "tskey-auth-k2Fo76HUUM11CNTRL-4LiPVfUEh2PkASuQ1W5c2PzTQYv4jFji3"
+tailscale_hostname = "agent-vm"
+tailscale_tags     = ["tag:agent"] # Must be pre-declared in your tailnet ACL
+
+timezone          = "America/Chicago"
+agent_admin_email = "you@example.com"
+
+# Pick something unique; backup bucket names are globally unique across GCS.
+backup_bucket_suffix = "01"

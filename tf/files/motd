@@ -1,0 +1,30 @@
+
+     __ _  __ _  ___ _ __ | |_   __   ___ __ ___
+    / _` |/ _` |/ _ \ '_ \| __|  \ \ / / '_ ` _ \
+   | (_| | (_| |  __/ | | | |_    \ V /| | | | | |
+    \__,_|\__, |\___|_| |_|\__|    \_/ |_| |_| |_|
+          |___/
+
+ Self-hosted AI agent stack. Provisioned by Terraform.
+
+ Layout:
+   ~/agent/                      <- compose root
+     docker-compose.yml
+     .env                        <- generated secrets; edit API keys only
+     backup.sh                   <- runs nightly via cron
+     postgres/init/              <- first-boot SQL (pgvector + DBs)
+
+ Useful:
+   cd ~/agent && docker compose ps
+   cd ~/agent && docker compose up -d
+   cd ~/agent && docker compose logs -f <service>
+   docker exec -it agent-postgres psql -U agent
+   docker exec -it agent-ollama ollama list
+
+ Next, follow the main guide sections 7-11 to add:
+   Open WebUI, n8n, Langfuse, Caddy reverse proxy, MCP gateway.
+
+ You are on the Tailnet as:  agent-vm
+ Backups go to:              gs://<project>-agent-backups-01
+ Snapshots (disk-level):     daily @ 07:00 UTC, 14-day retention
+

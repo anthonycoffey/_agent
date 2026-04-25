@@ -1,0 +1,154 @@
+#cloud-config
+#
+# cloud-init for the agent VM.
+# Runs once, on first boot, before you can SSH in.
+# Output log: /var/log/cloud-init-output.log on the VM.
+
+# ---------- Timezone + locale ----------
+timezone: ${timezone}
+locale: en_US.UTF-8
+
+# ---------- System packages ----------
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - ufw
+  - jq
+  - git
+  - htop
+  - unattended-upgrades
+  - python3-pip
+  - apt-transport-https
+  - software-properties-common
+
+# ---------- Very early commands ----------
+#
+# bootcmd runs before write_files. OS Login on GCE suppresses cloud-init's
+# top-level `users:` block, so we create the agent user manually here.
+bootcmd:
+  - useradd --create-home --shell /bin/bash --groups sudo agent 2>/dev/null || true
+  - echo "agent ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/90-agent
+  - chmod 0440 /etc/sudoers.d/90-agent
+  - mkdir -p /home/agent/agent
+  - chown -R agent:agent /home/agent
+
+# ---------- Drop the configuration files on disk ----------
+write_files:
+  # MOTD / welcome banner
+  - path: /etc/motd
+    permissions: '0644'
+    owner: root:root
+    encoding: base64
+    content: ${motd_b64}
+
+  # docker-compose.yml for the agent stack (starter — data + model layer)
+  - path: /home/agent/agent/docker-compose.yml
+    permissions: '0644'
+    owner: agent:agent
+    encoding: base64
+    content: ${docker_compose_b64}
+
+  # .env template (real values injected below in the inline .env write)
+  - path: /home/agent/agent/env.template
+    permissions: '0600'
+    owner: agent:agent
+    encoding: base64
+    content: ${env_template_b64}
+
+  # Daily backup script (cron installed below)
+  - path: /home/agent/agent/backup.sh
+    permissions: '0755'
+    owner: agent:agent
+    encoding: base64
+    content: ${backup_script_b64}
+
+  # The final, real .env built from the template + generated secrets.
+  - path: /home/agent/agent/.env
+    permissions: '0600'
+    owner: agent:agent
+    content: |
+      # ==== General ====
+      TAILSCALE_HOST=${tailscale_hostname}.REPLACE_WITH_YOUR_TAILNET.ts.net
+      TZ=${timezone}
+
+      # ==== Postgres ====
+      POSTGRES_USER=agent
+      POSTGRES_DB=agent
+      POSTGRES_PASSWORD=${postgres_password}
+
+      # ==== Open WebUI ====
+      WEBUI_SECRET_KEY=${webui_secret_key}
+
+      # ==== n8n ====
+      N8N_ENCRYPTION_KEY=${n8n_encryption_key}
+      N8N_USER_MANAGEMENT_JWT_SECRET=${n8n_jwt_secret}
+
+      # ==== Langfuse ====
+      LANGFUSE_SECRET=${langfuse_secret}
+      LANGFUSE_SALT=${langfuse_salt}
+      NEXTAUTH_SECRET=${nextauth_secret}
+
+      # ==== Model provider keys (edit these after first boot) ====
+      OPENAI_API_KEY=
+      ANTHROPIC_API_KEY=
+      GOOGLE_API_KEY=
+
+  # Unattended security upgrades config
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: '0644'
+    owner: root:root
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+
+# ---------- Commands, run top-to-bottom on first boot ----------
+runcmd:
+  # ---- Tailscale install ----
+  - curl -fsSL https://tailscale.com/install.sh | sh
+
+  # ---- Tailscale join tailnet ----
+  - |
+    tailscale up \
+      --authkey='${tailscale_auth_key}' \
+      --hostname='${tailscale_hostname}' \
+      --ssh \
+      --accept-routes \
+      ${tailscale_tags_arg}
+
+  # ---- UFW — allow SSH + Tailscale interface ----
+  - ufw default deny incoming
+  - ufw default allow outgoing
+  - ufw allow in on tailscale0
+  - ufw allow 22/tcp comment 'IAP fallback'
+  - ufw --force enable
+
+  # ---- Docker install (official apt repo) ----
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - chmod a+r /etc/apt/keyrings/docker.gpg
+  - |
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" \
+      > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - DEBIAN_FRONTEND=noninteractive apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker agent
+
+  # ---- Final ownership sweep ----
+  - chown -R agent:agent /home/agent/agent
+  - chmod 0700 /home/agent/agent
+  - chmod 0600 /home/agent/agent/.env
+
+  # ---- Cron entry for backups ----
+  - |
+    (sudo -u agent crontab -l 2>/dev/null; echo "0 4 * * * /home/agent/agent/backup.sh >> /home/agent/agent/backup.log 2>&1") | sudo -u agent crontab -
+
+  # ---- Log completion ----
+  - echo "Bootstrap complete at $(date -Iseconds)" >> /var/log/bootstrap-done.log
+
+final_message: "agent-vm cloud-init finished after $UPTIME seconds."

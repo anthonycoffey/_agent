@@ -1,0 +1,93 @@
+# Agent stack — starter docker-compose.
+#
+# This file is the "data + model" foundation laid down by Terraform's cloud-init.
+# Add Open WebUI, n8n, Langfuse, Caddy, and MCP servers by following sections
+# 7-11 of the main guide. The structure below is designed so those services
+# drop in without restructuring what's here.
+
+name: agent
+
+networks:
+  agent-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  qdrant-data:
+  redis-data:
+  ollama-data:
+
+services:
+  # ---------- Data layer ----------
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agent-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    networks: [agent-net]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: agent-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks: [agent-net]
+
+  redis:
+    image: redis:7-alpine
+    container_name: agent-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    networks: [agent-net]
+
+  # ---------- Model layer ----------
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agent-ollama
+    restart: unless-stopped
+    volumes:
+      - ollama-data:/root/.ollama
+    networks: [agent-net]
+    # Uncomment the deploy block when you add a GPU and the NVIDIA
+    # Container Toolkit:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    container_name: agent-litellm
+    restart: unless-stopped
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GOOGLE_API_KEY}
+      LITELLM_MASTER_KEY: ${WEBUI_SECRET_KEY}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    networks: [agent-net]
+    depends_on:
+      postgres:
+        condition: service_healthy
