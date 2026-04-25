@@ -1,9 +1,7 @@
-# Agent stack — starter docker-compose.
+# Agent stack — docker-compose.
 #
-# This file is the "data + model" foundation laid down by Terraform's cloud-init.
-# Add Open WebUI, n8n, Langfuse, Caddy, and MCP servers by following sections
-# 7-11 of the main guide. The structure below is designed so those services
-# drop in without restructuring what's here.
+# Originally laid down by Terraform's cloud-init as a "data + model" foundation.
+# Open WebUI is wired in. Still to add: n8n, Caddy, Langfuse, MCP servers.
 
 name: agent
 
@@ -16,6 +14,7 @@ volumes:
   qdrant-data:
   redis-data:
   ollama-data:
+  openwebui-data:
 
 services:
   # ---------- Data layer ----------
@@ -91,3 +90,26 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  # ---------- UI layer ----------
+
+  openwebui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: agent-openwebui
+    restart: unless-stopped
+    ports:
+      - "3000:8080"
+    environment:
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY}
+      OPENAI_API_BASE_URL: http://litellm:4000/v1
+      OPENAI_API_KEY: ${WEBUI_SECRET_KEY}
+      ENABLE_OLLAMA_API: "false"
+      VECTOR_DB: qdrant
+      QDRANT_URI: http://qdrant:6333
+      RAG_EMBEDDING_ENGINE: ollama
+      RAG_EMBEDDING_MODEL: nomic-embed-text
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - openwebui-data:/app/backend/data
+    networks: [agent-net]
+    depends_on: [litellm, qdrant]
