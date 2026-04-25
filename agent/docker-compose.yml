@@ -1,7 +1,7 @@
 # Agent stack — docker-compose.
 #
 # Originally laid down by Terraform's cloud-init as a "data + model" foundation.
-# Open WebUI is wired in. Still to add: n8n, Caddy, Langfuse, MCP servers.
+# Phase 1 wires in n8n + Cloudflare Tunnel. Still to add: Langfuse, MCP servers.
 
 name: agent
 
@@ -15,6 +15,7 @@ volumes:
   redis-data:
   ollama-data:
   openwebui-data:
+  n8n-data:
 
 services:
   # ---------- Data layer ----------
@@ -113,3 +114,42 @@ services:
       - openwebui-data:/app/backend/data
     networks: [agent-net]
     depends_on: [litellm, qdrant]
+
+  # ---------- Workflow layer ----------
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: agent-n8n
+    restart: unless-stopped
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_USER_MANAGEMENT_JWT_SECRET: ${N8N_USER_MANAGEMENT_JWT_SECRET}
+      N8N_HOST: ${N8N_HOST}
+      N8N_PROTOCOL: https
+      N8N_PORT: 5678
+      WEBHOOK_URL: https://${N8N_HOST}/
+      N8N_PROXY_HOPS: 1
+      GENERIC_TIMEZONE: ${TZ}
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n-data:/home/node/.n8n
+    networks: [agent-net]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------- Ingress layer ----------
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: agent-cloudflared
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
+    networks: [agent-net]
+    depends_on: [n8n]
