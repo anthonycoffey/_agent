@@ -97,7 +97,7 @@
         "resource": "message",
         "operation": "addLabels",
         "messageId": "={{ $json.messageId }}",
-        "labelIds": "={{ ['Bugsy/' + $json.label.charAt(0).toUpperCase() + $json.label.slice(1).replace('_', '')] }}"
+        "labelIds": "PICK_BUGSY_TRIAGED_FROM_DROPDOWN_AFTER_IMPORT"
       },
       "id": "apply-label",
       "name": "Apply Gmail Label",
