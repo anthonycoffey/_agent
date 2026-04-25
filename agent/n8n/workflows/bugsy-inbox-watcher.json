@@ -1,0 +1,242 @@
+{
+  "name": "Bugsy — Inbox Watcher (gmail)",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            { "mode": "everyMinute" }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "id": "gmail-trigger",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 300],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail — Bugsy" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            { "name": "from",      "type": "stringValue", "stringValue": "={{ $json.From }}" },
+            { "name": "subject",   "type": "stringValue", "stringValue": "={{ $json.Subject }}" },
+            { "name": "snippet",   "type": "stringValue", "stringValue": "={{ $json.snippet }}" },
+            { "name": "messageId", "type": "stringValue", "stringValue": "={{ $json.id }}" },
+            { "name": "threadId",  "type": "stringValue", "stringValue": "={{ $json.threadId }}" },
+            { "name": "account",   "type": "stringValue", "stringValue": "coffey.j.anthony@gmail.com" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "extract-fields",
+      "name": "Extract Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "modelId": { "mode": "list", "value": "claude-haiku-4-5" },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are Bugsy, a 1920s NY Italian-American mobster who handles the boss's email triage. Classify the email into ONE of: important, needs_reply, scheduling, fyi, promo. Respond with ONLY the label, no other text. Definitions:\n- important: time-sensitive from a real person; money/legal/security/urgent\n- needs_reply: a real human asking the boss something where a reply is expected\n- scheduling: meeting requests, calendar coordination, availability asks\n- fyi: receipts, confirmations, automated notifications worth knowing\n- promo: newsletters, marketing, sales pitches, mass mailings"
+            },
+            {
+              "role": "user",
+              "content": "From: {{ $json.from }}\nSubject: {{ $json.subject }}\nSnippet: {{ $json.snippet }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": { "temperature": 0 }
+      },
+      "id": "classify",
+      "name": "Classify",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [680, 300],
+      "credentials": {
+        "openAiApi": { "name": "LiteLLM — local proxy" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            {
+              "name": "label",
+              "type": "stringValue",
+              "stringValue": "={{ $json.message.content.trim().toLowerCase() }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "set-label",
+      "name": "Set Label",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.messageId }}",
+        "labelIds": "={{ ['Bugsy/' + $json.label.charAt(0).toUpperCase() + $json.label.slice(1).replace('_', '')] }}"
+      },
+      "id": "apply-label",
+      "name": "Apply Gmail Label",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [1120, 300],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail — Bugsy" }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict" },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "needs-reply",
+              "leftValue": "={{ $json.label }}",
+              "rightValue": "needs_reply",
+              "operator": { "type": "string", "operation": "equals" }
+            },
+            {
+              "id": "important",
+              "leftValue": "={{ $json.label }}",
+              "rightValue": "important",
+              "operator": { "type": "string", "operation": "equals" }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "should-bother",
+      "name": "Worth Bothering The Boss?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "resource": "chat",
+        "modelId": { "mode": "list", "value": "claude-sonnet-4-6" },
+        "messages": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are Bugsy, the boss's right-hand. You write reply drafts for the boss to review. Voice: 1920s NY Italian-American mobster — confident, warm, direct. Use sparing voice flourishes ('capisce', 'boss', 'ya') — one or two per message MAX. Underneath the voice the content must be CORRECT, PROFESSIONAL, and appropriate for the recipient. The boss reviews and tweaks before sending. Match the formality of the inbound email — if it's casual, you're casual; if it's a client, dial back the persona to a single warm greeting.\n\nOutput ONLY the email body. No subject line, no [Name] placeholders, no signature — write as if you're the boss replying."
+            },
+            {
+              "role": "user",
+              "content": "From: {{ $json.from }}\nSubject: {{ $json.subject }}\nSnippet: {{ $json.snippet }}\n\nWrite a reply draft from the boss."
+            }
+          ]
+        },
+        "simplify": true,
+        "options": { "temperature": 0.7 }
+      },
+      "id": "draft",
+      "name": "Draft Reply",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [1560, 200],
+      "credentials": {
+        "openAiApi": { "name": "LiteLLM — local proxy" }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "fields": {
+          "values": [
+            { "name": "draftBody", "type": "stringValue", "stringValue": "={{ $json.message.content }}" }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "set-draft",
+      "name": "Set Draft Body",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1780, 200]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "create",
+        "subject": "=Re: {{ $('Extract Fields').item.json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.draftBody }}",
+        "options": {
+          "sendTo": "={{ $('Extract Fields').item.json.from }}",
+          "threadId": "={{ $('Extract Fields').item.json.threadId }}"
+        }
+      },
+      "id": "create-draft",
+      "name": "Save Gmail Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [2000, 200],
+      "credentials": {
+        "gmailOAuth2": { "name": "Gmail — Bugsy" }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "select": "user",
+        "user": { "__rl": true, "value": "U0AUSKT2VRD", "mode": "id" },
+        "text": "=Heya boss — got a *{{ $('Extract Fields').item.json.label }}* one ova heah.\n\n*From:* {{ $('Extract Fields').item.json.from }}\n*Subject:* {{ $('Extract Fields').item.json.subject }}\n\nDrafted ya a reply, sittin' in ya drafts folder waitin' on the once-over. Capisce?",
+        "otherOptions": {}
+      },
+      "id": "slack-dm",
+      "name": "Ping The Boss",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [2220, 200],
+      "credentials": {
+        "slackApi": { "name": "Slack — Bugsy" }
+      }
+    }
+  ],
+  "connections": {
+    "Gmail Trigger":            { "main": [[ { "node": "Extract Fields",            "type": "main", "index": 0 } ]] },
+    "Extract Fields":           { "main": [[ { "node": "Classify",                  "type": "main", "index": 0 } ]] },
+    "Classify":                 { "main": [[ { "node": "Set Label",                 "type": "main", "index": 0 } ]] },
+    "Set Label":                { "main": [[ { "node": "Apply Gmail Label",         "type": "main", "index": 0 } ]] },
+    "Apply Gmail Label":        { "main": [[ { "node": "Worth Bothering The Boss?", "type": "main", "index": 0 } ]] },
+    "Worth Bothering The Boss?": {
+      "main": [
+        [ { "node": "Draft Reply", "type": "main", "index": 0 } ],
+        []
+      ]
+    },
+    "Draft Reply":              { "main": [[ { "node": "Set Draft Body",            "type": "main", "index": 0 } ]] },
+    "Set Draft Body":           { "main": [[ { "node": "Save Gmail Draft",          "type": "main", "index": 0 } ]] },
+    "Save Gmail Draft":         { "main": [[ { "node": "Ping The Boss",             "type": "main", "index": 0 } ]] }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
