@@ -162,6 +162,44 @@ extraction.
 
 ---
 
+## 2026-04-25 — Repo restructure session
+
+### Incident #6: `/home/agent` owned by root after first boot
+
+**Symptom:** Trying to `mv ~/agent ~/agent.bak` from the agent user
+failed with `Permission denied`, even though `~/agent` itself is owned
+by `agent:agent`.
+
+**Diagnosis:** `/home/agent` was owned `root:root 0755`. Renaming a
+directory needs write permission on the *parent*, so agent couldn't
+mutate anything at the top level of its own home.
+
+**Root cause (suspected):** cloud-init's bootcmd runs
+`useradd --create-home` and then `chown -R agent:agent /home/agent`,
+which should produce an agent-owned home. But OS Login provisions home
+directories on first SSH login, and likely re-created `/home/agent`
+itself (root-owned) after cloud-init ran, leaving the contents
+agent-owned but the parent dir not.
+
+**Fix on the live VM:**
+```bash
+sudo chown agent:agent /home/agent
+sudo chmod 0755 /home/agent
+```
+
+**Prevention (not yet applied to TF):** Add a runcmd at the very end of
+`cloud-init/agent-vm.yaml.tftpl` that re-asserts ownership *after* OS
+Login has had a chance to touch the directory:
+```yaml
+runcmd:
+  - ...
+  - chown agent:agent /home/agent && chmod 0755 /home/agent
+```
+A simpler alternative is a systemd one-shot service that runs on every
+boot and idempotently fixes the ownership.
+
+---
+
 ## Lessons distilled
 
 1. **GCE cloud-init requires plain text user-data.** Not gzipped, not base64.
