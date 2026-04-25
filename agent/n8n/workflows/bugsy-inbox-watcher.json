@@ -44,7 +44,8 @@
     },
     {
       "parameters": {
-        "resource": "chat",
+        "resource": "text",
+        "operation": "message",
         "modelId": { "mode": "list", "value": "claude-haiku-4-5" },
         "messages": {
           "values": [
@@ -137,7 +138,8 @@
     },
     {
       "parameters": {
-        "resource": "chat",
+        "resource": "text",
+        "operation": "message",
         "modelId": { "mode": "list", "value": "claude-sonnet-4-6" },
         "messages": {
           "values": [
