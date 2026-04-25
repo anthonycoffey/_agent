@@ -62,7 +62,13 @@ Docker services on the VM:
 ```
 _agent/
 ├── README.md
+├── agent/                         runtime files; mirrors ~/agent on the VM
+│   ├── docker-compose.yml         the stack
+│   ├── env.template               .env reference
+│   ├── backup.sh                  nightly backup with GCS upload
+│   └── motd                       SSH welcome banner
 ├── docs/
+│   ├── decisions.md               major architectural decisions
 │   └── incident-log.md            deploy-time issues and lessons
 └── tf/
     ├── versions.tf                TF 1.9+, google ~> 6.0, random, cloudinit
@@ -77,13 +83,8 @@ _agent/
     ├── terraform.tfvars.example
     ├── bootstrap/
     │   └── 00-create-state-bucket.sh
-    ├── cloud-init/
-    │   └── agent-vm.yaml.tftpl    first-boot bootstrap
-    └── files/
-        ├── docker-compose.yml     starter stack
-        ├── env.template           .env reference
-        ├── backup.sh              nightly backup with GCS upload
-        └── motd                   SSH welcome banner
+    └── cloud-init/
+        └── agent-vm.yaml.tftpl    first-boot bootstrap
 ```
 
 ---

@@ -62,10 +62,10 @@ data "cloudinit_config" "agent_vm" {
       admin_email        = var.agent_admin_email
 
       # Rendered files, base64-encoded to preserve formatting exactly.
-      docker_compose_b64 = filebase64("${path.module}/files/docker-compose.yml")
-      env_template_b64   = filebase64("${path.module}/files/env.template")
-      backup_script_b64  = filebase64("${path.module}/files/backup.sh")
-      motd_b64           = filebase64("${path.module}/files/motd")
+      docker_compose_b64 = filebase64("${path.module}/../agent/docker-compose.yml")
+      env_template_b64   = filebase64("${path.module}/../agent/env.template")
+      backup_script_b64  = filebase64("${path.module}/../agent/backup.sh")
+      motd_b64           = filebase64("${path.module}/../agent/motd")
 
       # Secrets baked into the .env on first boot.
       webui_secret_key   = random_password.webui_secret_key.result
