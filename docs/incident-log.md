@@ -200,6 +200,148 @@ boot and idempotently fixes the ownership.
 
 ---
 
+### Incident #7: LiteLLM crash-loop — `config.yaml` was a directory, not a file
+
+**Symptom:** n8n's OpenAI credential test against `http://litellm:4000/v1`
+returned "couldn't connect with these settings." Direct probe inside the
+docker network confirmed nothing was listening:
+
+```
+$ docker exec agent-n8n wget http://litellm:4000/v1/models
+wget: can't connect to remote host (172.18.0.6): Connection refused
+```
+
+`docker ps` showed `agent-litellm` as `Up`, masking the real state — the
+container's main process had crashed and supervised restart was in
+progress. Logs revealed:
+
+```
+File "/usr/lib/python3.13/site-packages/litellm/proxy/proxy_server.py",
+  line 2334, in _get_config_from_file
+    with open(f"{file_path}", "r") as config_file:
+IsADirectoryError: [Errno 21] Is a directory: '/app/config.yaml'
+```
+
+On the host:
+
+```
+$ ls -la ~/agent/litellm/
+drwxr-xr-x 2 root root 4096 Apr 25 00:36 config.yaml   ← a directory!
+```
+
+**Root cause:** When the bind-mount source path
+`~/agent/litellm/config.yaml` did not exist at the moment the container
+was first started, Docker's bind-mount logic created it. Docker has no
+way to know whether the mount target inside the container is meant to
+be a file or a directory, so it **defaults to creating a directory**
+on the host side. LiteLLM then tried to read that "config file" and
+crashed because it was a directory.
+
+This is a long-standing Docker footgun: a missing bind-mount source is
+silently created as a directory, owned by `root` (since the Docker
+daemon runs as root), regardless of the parent directory's owner.
+
+The condition arose because:
+
+1. The compose file declares `./litellm/config.yaml:/app/config.yaml:ro`
+2. We had created the *parent* directory `agent/litellm/` in the repo,
+   tracked with a `.gitkeep`, but **no `config.yaml` file**
+3. On the VM, after `docker compose up -d`, Docker found no file at
+   `~/agent/litellm/config.yaml` → auto-created it as a root-owned
+   directory → LiteLLM crashed → repeat forever
+
+**Why a simple restart wasn't enough:** After we wrote a real
+`config.yaml` and ran `docker compose up -d litellm`, the start failed
+with:
+
+```
+Error response from daemon: failed to create task for container:
+  ... mount src=/home/agent/agent/litellm/config.yaml,
+      dst=/app/config.yaml ... not a directory
+```
+
+Even though the host file was now correct, the existing container's
+mount spec had been negotiated and cached when the source was a
+directory. Docker tried to bind-mount a *file* over the original
+*directory* mountpoint — different mount semantics, refused.
+
+**Fix on the live VM:**
+
+1. Stop the misconfigured container so its mount handle releases:
+   ```bash
+   cd ~/agent && docker compose stop litellm
+   ```
+2. Remove the bogus auto-created directory:
+   ```bash
+   rm -rf ~/agent/litellm/config.yaml
+   ```
+3. Pull the real config from the repo (we'd added it in a prior commit):
+   ```bash
+   cd ~/bugsy && git pull
+   ```
+4. **Recreate** the container, not just restart — needed so Docker
+   re-reads the mount source freshly:
+   ```bash
+   cd ~/agent && docker compose rm -sf litellm && docker compose up -d litellm
+   ```
+5. Verify after first-boot prisma migrations finish (~30s):
+   ```bash
+   docker logs --tail 20 agent-litellm
+   curl -H "Authorization: Bearer $WEBUI_SECRET_KEY" http://litellm:4000/v1/models
+   ```
+
+**Prevention — three layers:**
+
+1. **Never bind-mount a missing file.** Either commit the real file to
+   the repo (now done — `agent/litellm/config.yaml` is tracked), or use
+   a named volume + an init container to seed the file. The empty
+   `.gitkeep`-only directory we had was actively dangerous because it
+   *partially* satisfied the path while leaving the leaf node missing.
+
+2. **For Terraform / fresh deploys:** the long-term fix is to stop
+   relying on `cloud-init` to deliver runtime files via `filebase64`
+   altogether. Per the [decisions log](../docs/decisions.md), `~/agent`
+   is now a symlink into `~/bugsy/agent`, which is a `git clone` of the
+   repo. A fresh deploy should:
+
+   - Have cloud-init `git clone` the repo into `~/bugsy`
+   - Symlink `~/agent` → `~/bugsy/agent`
+   - Then run `docker compose up -d`
+
+   That way every tracked file (including `litellm/config.yaml`) is
+   present *before* Docker starts, and we never trigger the
+   missing-source auto-create behavior. The current cloud-init still
+   uses `filebase64` for a fixed list of files; it should be
+   refactored to clone instead. **TODO** — open task for the next TF
+   pass.
+
+3. **Make Docker fail loudly on missing bind sources.** Compose v2.20+
+   supports `bind: { create_host_path: false }` which makes the
+   container fail to start instead of silently creating a directory:
+
+   ```yaml
+   volumes:
+     - type: bind
+       source: ./litellm/config.yaml
+       target: /app/config.yaml
+       read_only: true
+       bind:
+         create_host_path: false
+   ```
+
+   Worth adopting for every bind mount in
+   [agent/docker-compose.yml](../agent/docker-compose.yml). Loud failure
+   beats silent corruption every time.
+
+**Diagnostic lesson:** `docker ps` showed `Up` because Docker's restart
+policy was holding the container in a respawn loop — the *latest*
+attempt was up for a few seconds before crashing again. Always pair
+`docker ps` with `docker logs --tail N` when behavior doesn't match
+status, and use `docker inspect <name> --format '{{.State.Status}} {{.RestartCount}}'`
+to see the restart count, which is the real tell.
+
+---
+
 ## Lessons distilled
 
 1. **GCE cloud-init requires plain text user-data.** Not gzipped, not base64.
@@ -213,6 +355,16 @@ boot and idempotently fixes the ownership.
    to extract them when you need to.
 6. **Always check `sudo cloud-init status --long` after first boot.** A
    "done" status that completes in <30 seconds is suspect.
+7. **Missing bind-mount sources get auto-created as root-owned
+   directories.** Always commit the real file, or use
+   `bind.create_host_path: false` so Docker fails loudly instead.
+8. **`docker ps` showing `Up` does not mean healthy.** A container in a
+   restart loop reports the *current* attempt as running. Cross-check
+   with `docker logs` and `docker inspect ... .State.RestartCount`.
+9. **Bind mounts are negotiated at container *create* time, not start
+   time.** After fixing the host file/dir confusion, `docker compose
+   restart` is not enough — you need `docker compose rm -sf <svc> && up
+   -d` to force the mount spec to be re-read.
 
 ## Open questions for future sessions
 
