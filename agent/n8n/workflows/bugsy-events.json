@@ -54,17 +54,8 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ $json.body.challenge }}",
-        "options": {
-          "responseHeaders": {
-            "entries": [
-              {
-                "name": "Content-Type",
-                "value": "application/json"
-              }
-            ]
-          }
-        }
+        "responseBody": "={\"challenge\": \"{{ $json.body.challenge }}\"}",
+        "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
