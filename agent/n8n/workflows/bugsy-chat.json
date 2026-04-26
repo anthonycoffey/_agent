@@ -3,12 +3,10 @@
   "nodes": [
     {
       "parameters": {
+        "httpMethod": "POST",
         "path": "bugsy-cmd",
-        "options": {
-          "responseCode": {
-            "values": {}
-          }
-        }
+        "responseMode": "responseNode",
+        "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
@@ -25,24 +23,50 @@
         "assignments": {
           "assignments": [
             {
-              "id": "a542f8f3-68c8-4890-99aa-e66e48811100",
+              "id": "user-text-001",
               "name": "userText",
               "value": "={{ $json.body.text }}",
+              "type": "string"
+            },
+            {
+              "id": "response-url-001",
+              "name": "responseUrl",
+              "value": "={{ $json.body.response_url }}",
+              "type": "string"
+            },
+            {
+              "id": "channel-id-001",
+              "name": "channelId",
+              "value": "={{ $json.body.channel_id }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        176,
-        48
+        220,
+        0
       ],
-      "id": "ccc31ac2-cc08-496f-9227-93cb7035ed4a",
-      "name": "Edit Fields"
+      "id": "extract-cmd-fields-001",
+      "name": "Extract Fields"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"response_type\": \"ephemeral\", \"text\": \"_workin' on it, boss..._\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        440,
+        0
+      ],
+      "id": "respond-ack-001",
+      "name": "Ack To Slack"
     },
     {
       "parameters": {
@@ -59,7 +83,7 @@
               "role": "system"
             },
             {
-              "content": "={{ $json.userText }}"
+              "content": "={{ $('Extract Fields').item.json.userText }}"
             }
           ]
         },
@@ -70,8 +94,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        352,
-        48
+        660,
+        0
       ],
       "id": "bugsy-brain-7e3a4c1b",
       "name": "Bugsy Brain",
@@ -84,30 +108,33 @@
     },
     {
       "parameters": {
-        "select": "user",
-        "user": {
-          "__rl": true,
-          "value": "U0AUSKT2VRD",
-          "mode": "id"
+        "method": "POST",
+        "url": "={{ $('Extract Fields').item.json.responseUrl }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "response_type",
+              "value": "in_channel"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.message.content }}"
+            }
+          ]
         },
-        "text": "={{ $json.message.content }}",
-        "otherOptions": {}
+        "options": {}
       },
-      "type": "n8n-nodes-base.slack",
-      "typeVersion": 2.4,
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
       "position": [
-        528,
-        48
+        880,
+        0
       ],
-      "id": "05510f90-117a-40e9-96e9-a28bf397df57",
-      "name": "Send a message",
-      "webhookId": "90e70b28-c585-4b33-bcf7-3a910e309aab",
-      "credentials": {
-        "slackApi": {
-          "id": "TIP9AbQBq7X5Qidd",
-          "name": "Slack - Bugsy"
-        }
-      }
+      "id": "post-to-response-url-001",
+      "name": "Reply Where /bugsy Was Called"
     }
   ],
   "pinData": {},
@@ -116,14 +143,25 @@
       "main": [
         [
           {
-            "node": "Edit Fields",
+            "node": "Extract Fields",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Edit Fields": {
+    "Extract Fields": {
+      "main": [
+        [
+          {
+            "node": "Ack To Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ack To Slack": {
       "main": [
         [
           {
@@ -138,7 +176,7 @@
       "main": [
         [
           {
-            "node": "Send a message",
+            "node": "Reply Where /bugsy Was Called",
             "type": "main",
             "index": 0
           }
@@ -146,23 +184,9 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
-  },
-  "versionId": "4316ca42-f074-40a1-bb40-92ce0a533d18",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
-  },
-  "id": "FO37mz5PrnHEw6T1",
-  "tags": [
-    {
-      "name": "bugsy",
-      "id": "STXcXTbFXliuEHn6",
-      "updatedAt": "2026-04-26T05:37:15.701Z",
-      "createdAt": "2026-04-26T05:37:15.701Z"
-    }
-  ]
+  }
 }
