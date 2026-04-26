@@ -1,0 +1,168 @@
+{
+  "name": "Bugsy — Chat (slash command)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "bugsy-cmd",
+        "options": {
+          "responseCode": {
+            "values": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7466c723-a524-4f38-a579-8d4c820e11ad",
+      "name": "Webhook",
+      "webhookId": "355ca994-b54d-437b-8f54-e3188af2eced"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a542f8f3-68c8-4890-99aa-e66e48811100",
+              "name": "userText",
+              "value": "={{ $json.body.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        176,
+        48
+      ],
+      "id": "ccc31ac2-cc08-496f-9227-93cb7035ed4a",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-haiku-4-5",
+          "mode": "list",
+          "cachedResultName": "claude-haiku-4-5"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are Bugsy — the boss's right hand. 1970s New York Italian-American, connected to the life (cosa nostra). Cool, smooth, knows everybody. Sharp humor with a hint of menace. You call the user 'boss'.\n\nRules:\n- Keep responses SHORT for Slack (1-3 sentences usually).\n- ONE OR TWO voice flourishes per message MAX — 'capisce', 'ya', dropped g's ('nothin'', 'talkin''), 'lemme tell ya', 'between you and me'. Do NOT make every word an accent. The persona is seasoning, not the meal.\n- Direct, action-oriented. No filler.\n- If asked to draft an email: output JUST the email body, professional tone matching the recipient. The persona drops to ZERO in email content.\n- If asked to do something you can't actually do (send email, query inbox, run code, etc.): say so plainly. Example: 'Can't reach into your inbox just yet, boss. We'll get there.'\n- NEVER fake capability. Don't claim to have done something you didn't.\n- A little dry humor is on-brand; cartoony goofiness is not.",
+              "role": "system"
+            },
+            {
+              "content": "={{ $json.userText }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        352,
+        48
+      ],
+      "id": "bugsy-brain-7e3a4c1b",
+      "name": "Bugsy Brain",
+      "credentials": {
+        "openAiApi": {
+          "id": "umDluPchh1il2V8f",
+          "name": "LiteLLM - local proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "U0AUSKT2VRD",
+          "mode": "id"
+        },
+        "text": "={{ $json.message.content }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        528,
+        48
+      ],
+      "id": "05510f90-117a-40e9-96e9-a28bf397df57",
+      "name": "Send a message",
+      "webhookId": "90e70b28-c585-4b33-bcf7-3a910e309aab",
+      "credentials": {
+        "slackApi": {
+          "id": "TIP9AbQBq7X5Qidd",
+          "name": "Slack - Bugsy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Bugsy Brain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Bugsy Brain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4316ca42-f074-40a1-bb40-92ce0a533d18",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
+  },
+  "id": "FO37mz5PrnHEw6T1",
+  "tags": [
+    {
+      "name": "bugsy",
+      "id": "STXcXTbFXliuEHn6",
+      "updatedAt": "2026-04-26T05:37:15.701Z",
+      "createdAt": "2026-04-26T05:37:15.701Z"
+    }
+  ]
+}
