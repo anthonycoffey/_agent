@@ -66,7 +66,7 @@
         0
       ],
       "id": "respond-ack-001",
-      "name": "Ack To Slack"
+      "name": "Hold That Thought"
     },
     {
       "parameters": {
@@ -154,14 +154,14 @@
       "main": [
         [
           {
-            "node": "Ack To Slack",
+            "node": "Hold That Thought",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ack To Slack": {
+    "Hold That Thought": {
       "main": [
         [
           {
