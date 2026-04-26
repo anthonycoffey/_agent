@@ -121,7 +121,7 @@
             },
             {
               "name": "text",
-              "value": "={{ $json.message.content }}"
+              "value": "={{ $('Extract Fields').item.json.channelId.startsWith('D') ? $json.message.content : '> *<@' + $('Webhook').item.json.body.user_id + '>* asked: ' + $('Extract Fields').item.json.userText + '\\n\\n' + $json.message.content }}"
             }
           ]
         },
