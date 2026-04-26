@@ -4,17 +4,17 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "slack-bugsy",
+        "path": "slack-bugsy-events",
         "responseMode": "responseNode",
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
-        0,
-        0
+        -736,
+        64
       ],
-      "id": "events-webhook-001",
+      "id": "7f251303-0c0a-4958-ac07-bc6aa9a89614",
       "name": "Webhook",
       "webhookId": "bugsy-events-webhook-001"
     },
@@ -45,25 +45,34 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        220,
-        0
+        -512,
+        64
       ],
-      "id": "is-url-verification-001",
+      "id": "684e33fb-3e7f-4000-95ed-b1a2c54b85a1",
       "name": "Is URL Verification?"
     },
     {
       "parameters": {
-        "respondWith": "text",
+        "respondWith": "json",
         "responseBody": "={{ $json.body.challenge }}",
-        "options": {}
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        440,
-        -120
+        -288,
+        -64
       ],
-      "id": "respond-challenge-001",
+      "id": "8b76acbf-0c9d-4773-b2dd-08908a66a6d0",
       "name": "Respond With Challenge"
     },
     {
@@ -76,10 +85,10 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
       "position": [
-        440,
-        120
+        -288,
+        176
       ],
-      "id": "respond-ok-001",
+      "id": "ca1ce23e-5c38-4da1-9e15-e512334bc1ef",
       "name": "Respond 200 OK"
     },
     {
@@ -120,10 +129,10 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        660,
-        120
+        -64,
+        176
       ],
-      "id": "should-respond-001",
+      "id": "0e525ee3-3852-4085-98e8-00f6bfb3e833",
       "name": "Should Bugsy Respond?"
     },
     {
@@ -150,16 +159,15 @@
             }
           ]
         },
-        "includeOtherFields": false,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        880,
-        120
+        160,
+        176
       ],
-      "id": "extract-event-fields-001",
+      "id": "4a291496-419e-4b4a-8ffe-f743e2cd569b",
       "name": "Extract Event Fields"
     },
     {
@@ -188,10 +196,10 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        1100,
-        120
+        384,
+        176
       ],
-      "id": "bugsy-brain-events-001",
+      "id": "e4ab1940-2d64-4a6e-b328-843aedd353c3",
       "name": "Bugsy Brain",
       "credentials": {
         "openAiApi": {
@@ -209,17 +217,15 @@
           "mode": "id"
         },
         "text": "={{ $json.message.content }}",
-        "otherOptions": {
-          "thread_ts": "={{ $('Extract Event Fields').item.json.threadTs }}"
-        }
+        "otherOptions": {}
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
       "position": [
-        1320,
-        120
+        736,
+        192
       ],
-      "id": "send-bugsy-reply-001",
+      "id": "57f109b7-c8ab-45ad-9cf7-14218543f97c",
       "name": "Send Bugsy Reply",
       "webhookId": "bugsy-reply-001",
       "credentials": {
@@ -280,8 +286,7 @@
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
     "Extract Event Fields": {
@@ -307,9 +312,15 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
-  }
+  },
+  "versionId": "9488ca6d-7d16-44ad-b1f2-e1986d67bb8f",
+  "meta": {
+    "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
+  },
+  "id": "D1l0sAfvi5klYoSn",
+  "tags": []
 }
