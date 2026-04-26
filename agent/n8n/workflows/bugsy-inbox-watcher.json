@@ -33,9 +33,9 @@
       "parameters": {
         "modelId": {
           "__rl": true,
-          "value": "gpt-4o-mini",
+          "value": "claude-haiku-4-5",
           "mode": "list",
-          "cachedResultName": "GPT-4O-MINI"
+          "cachedResultName": "CLAUDE-HAIKU-4-5"
         },
         "messages": {
           "values": [
@@ -433,7 +433,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "fe9c8b26-788a-462d-96ee-cbc224400ff7",
+  "versionId": "06cc7cfb-4ebf-4e46-a00f-88cc948bb527",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
