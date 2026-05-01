@@ -182,7 +182,7 @@ When Bugsy suggests outreach channels for a specific prospect, prefer the channe
 These need owner input — Bugsy should NOT invent answers, just flag.
 
 - **Contact form on coffey.codes has no backend yet** — where do inbound leads land today? Likely manual email check until we wire it to n8n + Slack. **TODO:** wire it.
-- **No published case studies** — `/case-studies` redirects to `/`. Major credibility gap. Bugsy should not link to nonexistent case studies in outreach.
+- **No published case studies yet** — the `/case-studies` route exists but has no real cases written up. Major credibility gap. Bugsy should not invent or link to specific case studies in outreach.
 - **No lead magnets built** (planned: AI Readiness Checklist, Modernization Guide, ROI calculator). Until they exist, the only "next step" Bugsy can offer is the strategy call.
 - **Referral program incentive structure** undecided.
 - **Focused community channel** not chosen — strategy says "go deep on one," but which one isn't picked yet.

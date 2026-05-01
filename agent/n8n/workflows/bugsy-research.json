@@ -1,0 +1,389 @@
+{
+  "name": "Bugsy — Prospect Research (slash command)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bugsy-research",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1600, 0],
+      "id": "research-webhook-001",
+      "name": "Webhook",
+      "webhookId": "bugsy-research-webhook-001"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "raw-target-001",
+              "name": "rawTarget",
+              "value": "={{ $json.body.text.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "response-url-001",
+              "name": "responseUrl",
+              "value": "={{ $json.body.response_url }}",
+              "type": "string"
+            },
+            {
+              "id": "channel-id-001",
+              "name": "channelId",
+              "value": "={{ $json.body.channel_id }}",
+              "type": "string"
+            },
+            {
+              "id": "user-id-001",
+              "name": "userId",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "user-name-001",
+              "name": "userName",
+              "value": "={{ $json.body.user_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-1380, 0],
+      "id": "extract-cmd-fields-001",
+      "name": "Extract Fields"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"response_type\": \"ephemeral\", \"text\": \"_diggin' on that one for ya, boss... gimme a minute, I'll DM ya the brief._\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-1160, 0],
+      "id": "ack-research-001",
+      "name": "Acknowledge Slack Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "target-url-001",
+              "name": "targetUrl",
+              "value": "={{ $('Extract Fields').item.json.rawTarget.startsWith('http') ? $('Extract Fields').item.json.rawTarget : 'https://' + $('Extract Fields').item.json.rawTarget.replace(/^www\\./, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "search-query-001",
+              "name": "searchQuery",
+              "value": "={{ $('Extract Fields').item.json.rawTarget.replace(/^https?:\\/\\//, '').replace(/^www\\./, '').replace(/\\/$/, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-940, 0],
+      "id": "normalize-target-001",
+      "name": "Normalize Target"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://searxng:8080/search",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.searchQuery }} company funding hiring engineering"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 15000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-720, -100],
+      "id": "searxng-search-001",
+      "name": "SearXNG Search"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Normalize Target').item.json.targetUrl }}",
+        "options": {
+          "timeout": 10000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 5
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-720, 100],
+      "id": "fetch-homepage-001",
+      "name": "Fetch Homepage"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "search-results-001",
+              "name": "searchResultsCondensed",
+              "value": "={{ ($('SearXNG Search').item.json.results || []).slice(0, 10).map(function(r) { return '- ' + (r.title || '') + ' [' + (r.url || '') + ']\\n  ' + (r.content || '').replace(/\\s+/g, ' ').substring(0, 250); }).join('\\n\\n') }}",
+              "type": "string"
+            },
+            {
+              "id": "homepage-text-001",
+              "name": "homepageTextCondensed",
+              "value": "={{ (($('Fetch Homepage').item.json.data || $('Fetch Homepage').item.json.body || '') + '').replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().substring(0, 4000) }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-500, 0],
+      "id": "condense-research-001",
+      "name": "Condense Research Inputs"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gemini-2.5-pro",
+          "mode": "list",
+          "cachedResultName": "gemini-2.5-pro"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are Bugsy — a 1970s NY Italian-American capo working as the boss's right hand. You're researching a prospect for the boss (Anthony Coffey, coffey.codes). Your job: produce a sharp, honest BD brief and — if the fit warrants it — draft an outreach email.\n\n=================================================================\nCOFFEY.CODES BD PROFILE — your source of truth for qualification\n=================================================================\n\n# Mission\nAnthony Coffey runs coffey.codes — a senior solo developer / AI implementer who ships production-grade work for SMBs and growing tech orgs. Maker first, hands-on the keyboard, NOT an advisor or strategist-for-hire.\n\n# Pricing (anchor numbers, all negotiable)\n- Discovery / strategy: $150–$250/hr (first 20-min call free)\n- Project work: $5k+ minimum, most $5k–$50k\n- Part-time retainer: $1,500/week (~2 days/wk)\n- Full-time retainer: $2,500/week (embedded senior engineer / lead dev)\n\n# ICPs (canonical, prioritized)\n1. **Established SMEs (20–200 emp)** — SaaS, professional services, e-commerce, non-profits. Buyer: CTO, VP Eng, Head of Product, founder. Need: custom builds, modernization, reliable long-term partner.\n2. **Forward-thinking businesses (50–500 emp)** — tech, finance, healthcare, logistics, MarTech. Buyer: CTO, CIO, Head of Innovation, Director of Data Science. Need: practical AI integration, data engineering for AI.\n3. **SMBs needing real web presence** — local services, professional firms, growing brands. Buyer: owner, marketing lead. Need: modern site that converts, with analytics baked in.\n4. **Startups / agencies / tech teams needing senior IC capacity** — any industry. Need: experienced hands on the keyboard, lead dev who ships without ramp. NOT a fractional CTO role.\n\n# Anti-ICP (do NOT pursue)\n- Sub-$5k budgets\n- Pure B2C consumer apps\n- Crypto / Web3 speculative plays\n- Heavily regulated industries (defense, HIPAA-scope healthcare, SOC2-scope finance)\n- Companies seeking a Fractional CTO / strategic advisor (wrong fit, decline gracefully)\n- Companies that just hired a senior in-house engineer/CTO\n- 'Move fast and break things' cultures expecting next-week delivery\n- Pure ML research / academic AI\n- Anyone seeking 'cheap' or 'offshore-equivalent' rates\n- Agencies wanting white-label cheap dev work\n\n# Buying signals\n## Strong (act on these)\n1. Hiring senior backend/full-stack engineers with $140k+ comp\n2. Recently raised seed/Series A in target industries\n3. Job postings mentioning 'tech debt', 'modernization', 'rebuild', 'platform overhaul'\n4. Mentions of LLM, GenAI, 'AI initiative', 'AI strategy' in careers/press/blog\n5. Hiring 'AI engineer' but the company is tiny (<30 ppl)\n## Medium\n6. Open GitHub issues stale 30+ days on Anthony's stack (Node, Python, React, TS)\n7. Tech stack matches Anthony's (BuiltWith/Wappalyzer)\n8. CTO/founder publicly posting about scaling pain or hiring difficulty\n9. Recent product launch + visibly broken/slow site\n10. Job posting open >60 days for senior eng role\n11. Acquisition or merger announcement\n12. Conference talks / podcasts mentioning matching stack\n## Geographic boost\n- Austin-based\n## Negative signals (drop the score)\n- Just hired a CTO/VP Eng in last 90 days\n- Public layoffs in last 90 days\n- Funded later than Series B and revenue >$10M ARR (probably want full agencies)\n- All-in on Salesforce/SAP/.NET stacks\n\n# Outreach voice rules\nWhen drafting prospect-facing email content, the mobster persona DROPS TO ZERO. The boss's voice is:\n- Professional, direct, anti-hype\n- Personalized — reference a specific signal you found\n- Concise — 4-6 sentences max\n- Soft CTA — 'brief 20-min chat to see if there's a fit', never 'book a sales call'\n- Self-deprecating > self-aggrandizing\n- Never use: leverage, synergize, thought leader, value-add, circle back, touch base\n- Lead with their problem, not Anthony's resume\n- Sign as 'Anthony' (not 'Anthony Coffey from coffey.codes')\n\n# CTA ladder (default = least friction)\n1. Free 20-min strategy call (default)\n2. Discovery hour ($150–$250)\n3. Scoped pilot project ($5k–$15k, 2-4 weeks)\n4. Part-time retainer ($1,500/wk)\n5. Full-time retainer / embedded senior engineer ($2,500/wk)\n\n=================================================================\nYOUR TASK\n=================================================================\n\nGiven the prospect target and the research data below (web search results + scraped homepage text), produce a BD brief.\n\n**Output format:** Respond with VALID JSON ONLY. No markdown code fences, no commentary outside the JSON. Schema:\n\n{\n  \"companyName\": \"Best-guess company name\",\n  \"companyOverview\": \"2-3 sentence summary of what they do, size if knowable, stage if knowable\",\n  \"icpScore\": <integer 1-10>,\n  \"icpReasoning\": \"One sentence explaining the score in Bugsy's voice\",\n  \"signals\": [\n    {\"strength\": \"green\" | \"yellow\" | \"red\", \"text\": \"Specific observation tied to a buying or negative signal from the BD profile\"}\n  ],\n  \"conversationHooks\": [\"Specific hook 1\", \"Specific hook 2\", \"Specific hook 3\"],\n  \"suggestedApproach\": \"Bugsy's read for the boss in 1-2 sentences. Persona ON. Direct, no fluff.\",\n  \"draftEmail\": null | {\n    \"recipientGuess\": \"best-guess email address (or 'careers@target.com', 'hello@target.com', 'contact@target.com' if no specific contact found)\",\n    \"subject\": \"subject line (no Re: prefix; this is a cold outreach)\",\n    \"body\": \"4-6 sentence cold email body in Anthony's professional voice — persona OFF. Sign as 'Anthony'.\"\n  }\n}\n\n**Rules:**\n- ICP score 1-3 = clear no-fit (anti-ICP, wrong size/stage, wrong stack). draftEmail MUST be null.\n- ICP score 4-6 = worth a low-effort touch. draftEmail SHOULD be populated.\n- ICP score 7-10 = strong fit. draftEmail MUST be populated and personalized.\n- Be honest about anti-ICP fit. If they're a Fortune 500 or a crypto startup or just hired a CTO, say so plainly and score low.\n- If you can't find enough info, say so in icpReasoning and score conservatively (5).\n- Do NOT hallucinate signals. Only call out what's actually in the research data.\n- If the prospect is in the anti-ICP list (e.g. they're hiring a Fractional CTO), score 1-3 and draftEmail = null.\n- The draftEmail body should reference at least one specific signal you found.\n\nReturn ONLY the JSON object. No other text."
+            },
+            {
+              "content": "=Prospect target (raw input from boss): {{ $('Extract Fields').item.json.rawTarget }}\nNormalized URL: {{ $('Normalize Target').item.json.targetUrl }}\n\n=== Web search results ===\n{{ $json.searchResultsCondensed }}\n\n=== Homepage text (cleaned, first 4000 chars) ===\n{{ $json.homepageTextCondensed }}\n\nProduce the JSON brief now."
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [-280, 0],
+      "id": "bugsy-brain-research-001",
+      "name": "Bugsy Brain",
+      "credentials": {
+        "openAiApi": {
+          "id": "umDluPchh1il2V8f",
+          "name": "LiteLLM - local proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Gemini's JSON output. Strip code fences if present (Gemini sometimes wraps).\nconst raw = $input.first().json.message.content;\nconst cleaned = raw\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/\\s*```\\s*$/i, '')\n  .trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(cleaned);\n} catch (err) {\n  // If parse fails, return a degraded but valid structure so the workflow doesn't die\n  parsed = {\n    companyName: 'Parse error',\n    companyOverview: 'Bugsy choked on the JSON, boss. Raw response in rawOutput.',\n    icpScore: 0,\n    icpReasoning: 'Could not parse Gemini output: ' + err.message,\n    signals: [],\n    conversationHooks: [],\n    suggestedApproach: 'Re-run /research and check workflow execution log if this keeps happening.',\n    draftEmail: null,\n    rawOutput: raw,\n    parseError: err.message\n  };\n}\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-60, 0],
+      "id": "parse-brief-001",
+      "name": "Parse Brief"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "slack-text-001",
+              "name": "slackText",
+              "value": "=*💼 {{ $json.companyName }}* — {{ $('Normalize Target').item.json.targetUrl }}\n*ICP score: {{ $json.icpScore }}/10* — _{{ $json.icpReasoning }}_\n\n*What they do:*\n{{ $json.companyOverview }}\n\n*Signals seen:*\n{{ ($json.signals || []).map(function(s) { return (s.strength === 'green' ? '✅' : s.strength === 'red' ? '❌' : '⚠️') + ' ' + s.text; }).join('\\n') }}\n\n*Conversation hooks:*\n{{ ($json.conversationHooks || []).map(function(h) { return '• ' + h; }).join('\\n') }}\n\n*Bugsy's read:*\n{{ $json.suggestedApproach }}{{ $json.draftEmail ? '\\n\\n📝 _Draft saved to ya Drafts folder — subject: \"' + $json.draftEmail.subject + '\" → ' + $json.draftEmail.recipientGuess + '_' : '\\n\\n_No draft generated — score too low._' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [160, 0],
+      "id": "format-slack-001",
+      "name": "Format Slack Brief"
+    },
+    {
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "value": "={{ $('Extract Fields').item.json.userId }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.slackText }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [380, 0],
+      "id": "send-brief-dm-001",
+      "name": "Send Brief to Boss DM",
+      "webhookId": "bugsy-research-dm-001",
+      "credentials": {
+        "slackApi": {
+          "id": "TIP9AbQBq7X5Qidd",
+          "name": "Slack - Bugsy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "score-threshold",
+              "leftValue": "={{ $json.icpScore }}",
+              "rightValue": 4,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "has-draft",
+              "leftValue": "={{ $json.draftEmail }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [600, 0],
+      "id": "should-draft-001",
+      "name": "Should Save Draft?"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $json.draftEmail.subject }}",
+        "message": "={{ $json.draftEmail.body }}",
+        "options": {
+          "sendTo": "={{ $json.draftEmail.recipientGuess }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [820, -100],
+      "id": "save-gmail-draft-001",
+      "name": "Save Gmail Draft",
+      "webhookId": "bugsy-research-draft-001",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "3PBDCNYb2yLgsngB",
+          "name": "Gmail - Bugsy (anthony@coffey.codes)"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [[{"node": "Extract Fields", "type": "main", "index": 0}]]
+    },
+    "Extract Fields": {
+      "main": [[{"node": "Acknowledge Slack Webhook", "type": "main", "index": 0}]]
+    },
+    "Acknowledge Slack Webhook": {
+      "main": [[{"node": "Normalize Target", "type": "main", "index": 0}]]
+    },
+    "Normalize Target": {
+      "main": [[
+        {"node": "SearXNG Search", "type": "main", "index": 0},
+        {"node": "Fetch Homepage", "type": "main", "index": 0}
+      ]]
+    },
+    "SearXNG Search": {
+      "main": [[{"node": "Condense Research Inputs", "type": "main", "index": 0}]]
+    },
+    "Fetch Homepage": {
+      "main": [[{"node": "Condense Research Inputs", "type": "main", "index": 0}]]
+    },
+    "Condense Research Inputs": {
+      "main": [[{"node": "Bugsy Brain", "type": "main", "index": 0}]]
+    },
+    "Bugsy Brain": {
+      "main": [[{"node": "Parse Brief", "type": "main", "index": 0}]]
+    },
+    "Parse Brief": {
+      "main": [[{"node": "Format Slack Brief", "type": "main", "index": 0}]]
+    },
+    "Format Slack Brief": {
+      "main": [[{"node": "Send Brief to Boss DM", "type": "main", "index": 0}]]
+    },
+    "Send Brief to Boss DM": {
+      "main": [[{"node": "Should Save Draft?", "type": "main", "index": 0}]]
+    },
+    "Should Save Draft?": {
+      "main": [
+        [{"node": "Save Gmail Draft", "type": "main", "index": 0}],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}
