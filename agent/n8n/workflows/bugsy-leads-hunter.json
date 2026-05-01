@@ -15,7 +15,7 @@
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-1800, 0],
+      "position": [-2400, 0],
       "id": "leads-schedule-001",
       "name": "Schedule Trigger"
     },
@@ -28,23 +28,84 @@
           "parameters": [
             {
               "name": "q",
-              "value": "\"senior backend engineer\" OR \"senior full-stack engineer\" site:linkedin.com/jobs \"$140,000\" OR \"$150,000\" OR \"$160,000\""
+              "value": "site:boards.greenhouse.io \"senior engineer\" \"Node.js\" OR \"Python\" OR \"React\" OR \"TypeScript\" \"$140\" OR \"$150\" OR \"$160\" OR \"$170\""
             },
-            {
-              "name": "format",
-              "value": "json"
-            }
+            { "name": "format", "value": "json" }
           ]
         },
-        "options": {
-          "timeout": 15000
-        }
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-2160, 0],
+      "id": "sq-1",
+      "name": "SearXNG Q1 — Greenhouse High-Comp Eng"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:jobs.lever.co \"senior software engineer\" \"$140,000\" OR \"$150,000\" OR \"$160,000\" OR \"$170,000\""
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1960, 0],
+      "id": "sq-2",
+      "name": "SearXNG Q2 — Lever High-Comp Eng"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:jobs.ashbyhq.com \"senior engineer\" \"$140\" OR \"$150\" OR \"$160\" OR \"$170\""
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-1760, 0],
+      "id": "sq-3",
+      "name": "SearXNG Q3 — Ashby High-Comp Eng"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:techcrunch.com \"seed\" OR \"series A\" 2025 SaaS startup raises"
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [-1560, 0],
-      "id": "searxng-query-1-001",
-      "name": "SearXNG Query 1 — High-Comp Eng Hire"
+      "id": "sq-4",
+      "name": "SearXNG Q4 — TechCrunch Funding"
     },
     {
       "parameters": {
@@ -55,23 +116,18 @@
           "parameters": [
             {
               "name": "q",
-              "value": "\"seed funding\" OR \"series A\" SaaS 2025 site:techcrunch.com OR site:businesswire.com"
+              "value": "site:businesswire.com OR site:prnewswire.com \"series A\" OR \"seed round\" 2025 software technology"
             },
-            {
-              "name": "format",
-              "value": "json"
-            }
+            { "name": "format", "value": "json" }
           ]
         },
-        "options": {
-          "timeout": 15000
-        }
+        "options": { "timeout": 15000 }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1320, 0],
-      "id": "searxng-query-2-001",
-      "name": "SearXNG Query 2 — Recent Raise"
+      "position": [-1360, 0],
+      "id": "sq-5",
+      "name": "SearXNG Q5 — Wire Service Funding"
     },
     {
       "parameters": {
@@ -82,23 +138,18 @@
           "parameters": [
             {
               "name": "q",
-              "value": "\"tech debt\" OR \"legacy modernization\" OR \"platform overhaul\" site:linkedin.com/jobs"
+              "value": "site:news.ycombinator.com \"Ask HN: Who is hiring\" 2025"
             },
-            {
-              "name": "format",
-              "value": "json"
-            }
+            { "name": "format", "value": "json" }
           ]
         },
-        "options": {
-          "timeout": 15000
-        }
+        "options": { "timeout": 15000 }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1080, 0],
-      "id": "searxng-query-3-001",
-      "name": "SearXNG Query 3 — Explicit Problem Signal"
+      "position": [-1160, 0],
+      "id": "sq-6",
+      "name": "SearXNG Q6 — HN Who's Hiring"
     },
     {
       "parameters": {
@@ -109,31 +160,136 @@
           "parameters": [
             {
               "name": "q",
-              "value": "\"AI engineer\" OR \"ML engineer\" site:linkedin.com/jobs"
+              "value": "site:boards.greenhouse.io \"tech debt\" OR \"legacy modernization\" OR \"platform overhaul\" OR \"greenfield rebuild\""
             },
-            {
-              "name": "format",
-              "value": "json"
-            }
+            { "name": "format", "value": "json" }
           ]
         },
-        "options": {
-          "timeout": 15000
-        }
+        "options": { "timeout": 15000 }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-840, 0],
-      "id": "searxng-query-4-001",
-      "name": "SearXNG Query 4 — Premature ML Hire"
+      "position": [-960, 0],
+      "id": "sq-7",
+      "name": "SearXNG Q7 — Greenhouse Tech Debt Signal"
     },
     {
       "parameters": {
-        "jsCode": "// All 4 SearXNG nodes ran sequentially upstream, so their outputs\n// are all available by name in the execution context.\nconst allResults = [\n  ...($('SearXNG Query 1 — High-Comp Eng Hire').item.json.results || []),\n  ...($('SearXNG Query 2 — Recent Raise').item.json.results || []),\n  ...($('SearXNG Query 3 — Explicit Problem Signal').item.json.results || []),\n  ...($('SearXNG Query 4 — Premature ML Hire').item.json.results || [])\n];\n\n// Deduplicate by domain, keeping first occurrence.\nconst seen = new Set();\nconst unique = [];\n\nfor (const r of allResults) {\n  if (!r.url) continue;\n  let domain;\n  try {\n    domain = new URL(r.url).hostname.replace(/^www\\./, '');\n  } catch (e) {\n    continue;\n  }\n  if (seen.has(domain)) continue;\n  seen.add(domain);\n\n  unique.push({\n    company: r.title\n      ? r.title.split('|')[0].split(' - ')[0].split(' – ')[0].trim()\n      : domain,\n    url: r.url,\n    domain,\n    title: r.title || '',\n    snippet: (r.content || '').replace(/\\s+/g, ' ').trim().substring(0, 300)\n  });\n\n  if (unique.length >= 20) break;\n}\n\nreturn [{ json: { prospects: unique } }];"
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:jobs.lever.co \"tech debt\" OR \"legacy\" OR \"modernization\" OR \"AI initiative\" OR \"LLM\" OR \"generative AI\""
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-760, 0],
+      "id": "sq-8",
+      "name": "SearXNG Q8 — Lever AI + Tech Debt Signal"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:wellfound.com/jobs \"senior engineer\" OR \"senior developer\" Node OR Python OR React OR TypeScript"
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-560, 0],
+      "id": "sq-9",
+      "name": "SearXNG Q9 — Wellfound Startups"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:builtinaustin.com \"senior engineer\" OR \"senior developer\" OR \"senior software\""
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-360, 0],
+      "id": "sq-10",
+      "name": "SearXNG Q10 — BuiltIn Austin"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:boards.greenhouse.io \"AI engineer\" OR \"machine learning engineer\" OR \"LLM engineer\" OR \"AI/ML engineer\""
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-160, 0],
+      "id": "sq-11",
+      "name": "SearXNG Q11 — Greenhouse Premature ML Hire"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://searxng:8080/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "site:weworkremotely.com \"senior\" \"Node\" OR \"Python\" OR \"TypeScript\" OR \"React\""
+            },
+            { "name": "format", "value": "json" }
+          ]
+        },
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [40, 0],
+      "id": "sq-12",
+      "name": "SearXNG Q12 — WeWorkRemotely Stack Match"
+    },
+    {
+      "parameters": {
+        "jsCode": "// All 12 SearXNG nodes ran sequentially — all outputs available by name.\nconst allResults = [\n  ...($('SearXNG Q1 — Greenhouse High-Comp Eng').item.json.results || []),\n  ...($('SearXNG Q2 — Lever High-Comp Eng').item.json.results || []),\n  ...($('SearXNG Q3 — Ashby High-Comp Eng').item.json.results || []),\n  ...($('SearXNG Q4 — TechCrunch Funding').item.json.results || []),\n  ...($('SearXNG Q5 — Wire Service Funding').item.json.results || []),\n  ...($('SearXNG Q6 — HN Who\\'s Hiring').item.json.results || []),\n  ...($('SearXNG Q7 — Greenhouse Tech Debt Signal').item.json.results || []),\n  ...($('SearXNG Q8 — Lever AI + Tech Debt Signal').item.json.results || []),\n  ...($('SearXNG Q9 — Wellfound Startups').item.json.results || []),\n  ...($('SearXNG Q10 — BuiltIn Austin').item.json.results || []),\n  ...($('SearXNG Q11 — Greenhouse Premature ML Hire').item.json.results || []),\n  ...($('SearXNG Q12 — WeWorkRemotely Stack Match').item.json.results || [])\n];\n\n// Deduplicate by domain, keeping first occurrence.\nconst seen = new Set();\nconst unique = [];\n\nfor (const r of allResults) {\n  if (!r.url) continue;\n  let domain;\n  try {\n    domain = new URL(r.url).hostname.replace(/^www\\./, '');\n  } catch (e) {\n    continue;\n  }\n  if (seen.has(domain)) continue;\n  seen.add(domain);\n\n  unique.push({\n    company: r.title\n      ? r.title.split('|')[0].split(' - ')[0].split(' – ')[0].trim()\n      : domain,\n    url: r.url,\n    domain,\n    title: r.title || '',\n    snippet: (r.content || '').replace(/\\s+/g, ' ').trim().substring(0, 300)\n  });\n\n  if (unique.length >= 50) break;\n}\n\nreturn [{ json: { prospects: unique } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-600, 0],
+      "position": [240, 0],
       "id": "merge-dedup-001",
       "name": "Merge + Deduplicate"
     },
@@ -161,7 +317,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [-360, 0],
+      "position": [480, 0],
       "id": "score-prospects-001",
       "name": "Score Prospects",
       "credentials": {
@@ -173,31 +329,31 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse the LLM's JSON array output. Strip code fences if present.\nconst raw = $input.first().json.message.content;\nconst cleaned = raw\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/\\s*```\\s*$/i, '')\n  .trim();\n\nlet scored;\ntry {\n  scored = JSON.parse(cleaned);\n} catch (err) {\n  return [{ json: {\n    parseError: err.message,\n    rawOutput: raw,\n    scored: []\n  }}];\n}\n\nreturn [{ json: { scored } }];"
+        "jsCode": "const raw = $input.first().json.message.content;\nconst cleaned = raw\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/\\s*```\\s*$/i, '')\n  .trim();\n\nlet scored;\ntry {\n  scored = JSON.parse(cleaned);\n} catch (err) {\n  return [{ json: {\n    parseError: err.message,\n    rawOutput: raw,\n    scored: []\n  }}];\n}\n\nreturn [{ json: { scored } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-120, 0],
+      "position": [720, 0],
       "id": "parse-scores-001",
       "name": "Parse Scores"
     },
     {
       "parameters": {
-        "jsCode": "// Filter to score >= 4, sort desc, take top 5.\nconst scored = $input.first().json.scored || [];\n\nconst topLeads = scored\n  .filter(function(p) { return p.score >= 4; })\n  .sort(function(a, b) { return b.score - a.score; })\n  .slice(0, 5);\n\nreturn [{ json: { topLeads } }];"
+        "jsCode": "const scored = $input.first().json.scored || [];\n\nconst topLeads = scored\n  .filter(function(p) { return p.score >= 4; })\n  .sort(function(a, b) { return b.score - a.score; })\n  .slice(0, 5);\n\nreturn [{ json: { topLeads } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [120, 0],
+      "position": [960, 0],
       "id": "filter-sort-top5-001",
       "name": "Filter ≥4 + Top 5"
     },
     {
       "parameters": {
-        "jsCode": "// Build the Postgres upsert SQL from topLeads.\n// Doing this in a Code node avoids template-expression-in-SQL weirdness.\nconst topLeads = $input.first().json.topLeads || [];\n\nif (topLeads.length === 0) {\n  // Pass through with empty sql so Postgres node is a no-op\n  return [{ json: { sql: 'SELECT 1', topLeads } }];\n}\n\n// Escape single quotes for SQL safety\nfunction esc(v) {\n  return String(v || '').replace(/'/g, \"''\");\n}\n\nconst rows = topLeads.map(function(l) {\n  return (\n    `('${esc(l.domain)}', '${esc(l.company)}', '${esc(l.url)}',` +\n    ` '${esc(l.icpCategory)}', ${parseInt(l.score, 10) || 0},` +\n    ` '${esc(JSON.stringify(l.signals || []))}'::jsonb,` +\n    ` 'new', 'daily-hunter')`\n  );\n});\n\nconst sql = [\n  'INSERT INTO leads (domain, company, url, icp_bucket, score, signals, status, source)',\n  'VALUES',\n  rows.join(',\\n'),\n  'ON CONFLICT (domain) DO UPDATE SET',\n  '  score        = EXCLUDED.score,',\n  '  icp_bucket   = EXCLUDED.icp_bucket,',\n  '  signals      = EXCLUDED.signals,',\n  '  last_touched = now()',\n  \"WHERE leads.status = 'new'\"\n].join('\\n');\n\nreturn [{ json: { sql, topLeads } }];"
+        "jsCode": "const topLeads = $input.first().json.topLeads || [];\n\nif (topLeads.length === 0) {\n  return [{ json: { sql: 'SELECT 1', topLeads } }];\n}\n\nfunction esc(v) {\n  return String(v || '').replace(/'/g, \"''\");\n}\n\nconst rows = topLeads.map(function(l) {\n  return (\n    `('${esc(l.domain)}', '${esc(l.company)}', '${esc(l.url)}',` +\n    ` '${esc(l.icpCategory)}', ${parseInt(l.score, 10) || 0},` +\n    ` '${esc(JSON.stringify(l.signals || []))}'::jsonb,` +\n    ` 'new', 'daily-hunter')`\n  );\n});\n\nconst sql = [\n  'INSERT INTO leads (domain, company, url, icp_bucket, score, signals, status, source)',\n  'VALUES',\n  rows.join(',\\n'),\n  'ON CONFLICT (domain) DO UPDATE SET',\n  '  score        = EXCLUDED.score,',\n  '  icp_bucket   = EXCLUDED.icp_bucket,',\n  '  signals      = EXCLUDED.signals,',\n  '  last_touched = now()',\n  \"WHERE leads.status = 'new'\"\n].join('\\n');\n\nreturn [{ json: { sql, topLeads } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [360, 0],
+      "position": [1200, 0],
       "id": "prepare-upsert-sql-001",
       "name": "Prepare Upsert SQL"
     },
@@ -209,7 +365,7 @@
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [600, 0],
+      "position": [1440, 0],
       "id": "upsert-leads-001",
       "name": "Upsert to Postgres",
       "credentials": {
@@ -221,11 +377,11 @@
     },
     {
       "parameters": {
-        "jsCode": "// topLeads carried forward from Prepare Upsert SQL — Postgres output replaces\n// $json, so we pull from the named node upstream.\nconst topLeads = $('Prepare Upsert SQL').item.json.topLeads || [];\n\nif (topLeads.length === 0) {\n  return [{ json: {\n    slackText: \"🕵️ *Bugsy's Morning Sweep — nothin' clocked in today, boss.* Searches ran clean but nothin' hit the bar. I'll be back at it tomorrow mornin'.\"\n  }}];\n}\n\nconst lines = topLeads.map(function(lead) {\n  const signalStr = (lead.signals || []).slice(0, 3).join(' · ');\n  return [\n    `🔥 *[Score: ${lead.score}/10]* ${lead.company} — ${lead.url}`,\n    `ICP: ${lead.icpCategory} — ${lead.reason}`,\n    `📌 Signals: ${signalStr}`,\n    `→ /research ${lead.url} to go deep`\n  ].join('\\n');\n});\n\nconst date = new Date().toLocaleDateString('en-US', {\n  weekday: 'long', month: 'short', day: 'numeric'\n});\nconst header = `*🗂 Bugsy's Morning Sweep — ${date}*\\nListen up, boss. I ran the boards this mornin' and here's what I clocked. Top ${topLeads.length} prospects worth your attention:`;\n\nreturn [{ json: { slackText: [header, '', ...lines].join('\\n\\n') } }];"
+        "jsCode": "const topLeads = $('Prepare Upsert SQL').item.json.topLeads || [];\n\nif (topLeads.length === 0) {\n  return [{ json: {\n    slackText: \"🕵️ *Bugsy's Morning Sweep — nothin' clocked in today, boss.* Searches ran clean but nothin' hit the bar. I'll be back at it tomorrow mornin'.\"\n  }}];\n}\n\nconst lines = topLeads.map(function(lead) {\n  const signalStr = (lead.signals || []).slice(0, 3).join(' · ');\n  return [\n    `🔥 *[Score: ${lead.score}/10]* ${lead.company} — ${lead.url}`,\n    `ICP: ${lead.icpCategory} — ${lead.reason}`,\n    `📌 Signals: ${signalStr}`,\n    `→ /research ${lead.url} to go deep`\n  ].join('\\n');\n});\n\nconst date = new Date().toLocaleDateString('en-US', {\n  weekday: 'long', month: 'short', day: 'numeric'\n});\nconst header = `*🗂 Bugsy's Morning Sweep — ${date}*\\nListen up, boss. I ran the boards this mornin' and here's what I clocked. Top ${topLeads.length} prospects worth your attention:`;\n\nreturn [{ json: { slackText: [header, '', ...lines].join('\\n\\n') } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [840, 0],
+      "position": [1680, 0],
       "id": "format-slack-001",
       "name": "Format Slack Message"
     },
@@ -242,7 +398,7 @@
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
-      "position": [1080, 0],
+      "position": [1920, 0],
       "id": "send-leads-slack-001",
       "name": "Send to Mulberry Street",
       "webhookId": "bugsy-leads-slack-001",
@@ -257,64 +413,64 @@
   "pinData": {},
   "connections": {
     "Schedule Trigger": {
-      "main": [
-        [{"node": "SearXNG Query 1 — High-Comp Eng Hire", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "SearXNG Q1 — Greenhouse High-Comp Eng", "type": "main", "index": 0}]]
     },
-    "SearXNG Query 1 — High-Comp Eng Hire": {
-      "main": [
-        [{"node": "SearXNG Query 2 — Recent Raise", "type": "main", "index": 0}]
-      ]
+    "SearXNG Q1 — Greenhouse High-Comp Eng": {
+      "main": [[{"node": "SearXNG Q2 — Lever High-Comp Eng", "type": "main", "index": 0}]]
     },
-    "SearXNG Query 2 — Recent Raise": {
-      "main": [
-        [{"node": "SearXNG Query 3 — Explicit Problem Signal", "type": "main", "index": 0}]
-      ]
+    "SearXNG Q2 — Lever High-Comp Eng": {
+      "main": [[{"node": "SearXNG Q3 — Ashby High-Comp Eng", "type": "main", "index": 0}]]
     },
-    "SearXNG Query 3 — Explicit Problem Signal": {
-      "main": [
-        [{"node": "SearXNG Query 4 — Premature ML Hire", "type": "main", "index": 0}]
-      ]
+    "SearXNG Q3 — Ashby High-Comp Eng": {
+      "main": [[{"node": "SearXNG Q4 — TechCrunch Funding", "type": "main", "index": 0}]]
     },
-    "SearXNG Query 4 — Premature ML Hire": {
-      "main": [
-        [{"node": "Merge + Deduplicate", "type": "main", "index": 0}]
-      ]
+    "SearXNG Q4 — TechCrunch Funding": {
+      "main": [[{"node": "SearXNG Q5 — Wire Service Funding", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q5 — Wire Service Funding": {
+      "main": [[{"node": "SearXNG Q6 — HN Who's Hiring", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q6 — HN Who's Hiring": {
+      "main": [[{"node": "SearXNG Q7 — Greenhouse Tech Debt Signal", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q7 — Greenhouse Tech Debt Signal": {
+      "main": [[{"node": "SearXNG Q8 — Lever AI + Tech Debt Signal", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q8 — Lever AI + Tech Debt Signal": {
+      "main": [[{"node": "SearXNG Q9 — Wellfound Startups", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q9 — Wellfound Startups": {
+      "main": [[{"node": "SearXNG Q10 — BuiltIn Austin", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q10 — BuiltIn Austin": {
+      "main": [[{"node": "SearXNG Q11 — Greenhouse Premature ML Hire", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q11 — Greenhouse Premature ML Hire": {
+      "main": [[{"node": "SearXNG Q12 — WeWorkRemotely Stack Match", "type": "main", "index": 0}]]
+    },
+    "SearXNG Q12 — WeWorkRemotely Stack Match": {
+      "main": [[{"node": "Merge + Deduplicate", "type": "main", "index": 0}]]
     },
     "Merge + Deduplicate": {
-      "main": [
-        [{"node": "Score Prospects", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Score Prospects", "type": "main", "index": 0}]]
     },
     "Score Prospects": {
-      "main": [
-        [{"node": "Parse Scores", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Parse Scores", "type": "main", "index": 0}]]
     },
     "Parse Scores": {
-      "main": [
-        [{"node": "Filter ≥4 + Top 5", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Filter ≥4 + Top 5", "type": "main", "index": 0}]]
     },
     "Filter ≥4 + Top 5": {
-      "main": [
-        [{"node": "Prepare Upsert SQL", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Prepare Upsert SQL", "type": "main", "index": 0}]]
     },
     "Prepare Upsert SQL": {
-      "main": [
-        [{"node": "Upsert to Postgres", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Upsert to Postgres", "type": "main", "index": 0}]]
     },
     "Upsert to Postgres": {
-      "main": [
-        [{"node": "Format Slack Message", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Format Slack Message", "type": "main", "index": 0}]]
     },
     "Format Slack Message": {
-      "main": [
-        [{"node": "Send to Mulberry Street", "type": "main", "index": 0}]
-      ]
+      "main": [[{"node": "Send to Mulberry Street", "type": "main", "index": 0}]]
     }
   },
   "active": false,
