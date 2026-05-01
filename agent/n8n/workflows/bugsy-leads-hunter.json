@@ -214,7 +214,7 @@
       "name": "Upsert to Postgres",
       "credentials": {
         "postgres": {
-          "id": "postgres-agent-001",
+          "id": "oZCyktBzxpp0w1k0",
           "name": "Postgres — agent DB"
         }
       }
