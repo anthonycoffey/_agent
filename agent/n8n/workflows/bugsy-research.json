@@ -348,13 +348,10 @@
       "main": [[{"node": "Normalize Target", "type": "main", "index": 0}]]
     },
     "Normalize Target": {
-      "main": [[
-        {"node": "SearXNG Search", "type": "main", "index": 0},
-        {"node": "Fetch Homepage", "type": "main", "index": 0}
-      ]]
+      "main": [[{"node": "SearXNG Search", "type": "main", "index": 0}]]
     },
     "SearXNG Search": {
-      "main": [[{"node": "Condense Research Inputs", "type": "main", "index": 0}]]
+      "main": [[{"node": "Fetch Homepage", "type": "main", "index": 0}]]
     },
     "Fetch Homepage": {
       "main": [[{"node": "Condense Research Inputs", "type": "main", "index": 0}]]
