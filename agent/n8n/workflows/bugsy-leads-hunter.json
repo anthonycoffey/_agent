@@ -234,7 +234,7 @@
         "select": "channel",
         "channelId": {
           "__rl": true,
-          "value": "={{ $env.SLACK_LEADS_CHANNEL }}",
+          "value": "C0AV83XUSTU",
           "mode": "id"
         },
         "text": "={{ $json.slackText }}",
