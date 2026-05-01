@@ -342,6 +342,64 @@ to see the restart count, which is the real tell.
 
 ---
 
+## 2026-05-01 — Job board fetcher session
+
+### Incident #8: n8n Code node sandbox has no HTTP primitives
+
+**Symptom:** The job board fetcher workflow was written to use a single
+Code node that looped over job board URLs and fetched each one. Two
+approaches were tried in sequence:
+
+**Attempt 1 — `$helpers.httpRequest`:**
+```
+$helpers is not defined
+```
+
+**Attempt 2 — native `fetch`:**
+```
+fetch is not defined
+```
+
+Both failed at runtime inside the n8n Code node sandbox.
+
+**Root cause:** n8n's Code node runs in a restricted Node.js VM context.
+The `$helpers` object is documented in older n8n versions but is not
+exposed in the current runner. The global `fetch` (available in Node 18+)
+is also not injected into the sandbox. The sandbox provides plain
+JavaScript plus n8n's own `$input`, `$json`, `$node`, etc. helpers — but
+no outbound HTTP capability of its own.
+
+**Workaround applied (before the real fix):** Replaced the Code node with
+22 individual HTTP Request nodes chained sequentially, one per job board.
+All responses were referenced by node name in a downstream "Normalize"
+Code node using `.first().json`. This works but is brittle — adding a new
+source means adding another node, rewiring the chain, and updating the
+normalize node's name list.
+
+**Real fix:** Add `NODE_FUNCTION_ALLOW_EXTERNAL=axios` to the n8n service
+in `agent/docker-compose.yml`. This whitelists the `axios` npm module for
+use inside Code nodes via `require('axios')`. Scoped to a named module
+(not `*`) so the sandbox stays as locked down as possible.
+
+```yaml
+# agent/docker-compose.yml — n8n service environment
+NODE_FUNCTION_ALLOW_EXTERNAL: axios
+```
+
+After `docker compose up -d n8n` on the VM, Code nodes can do:
+```js
+const axios = require('axios');
+const { data } = await axios.get('https://example.com/jobs.json');
+```
+
+**Prevention:** When building any n8n workflow that needs outbound HTTP
+inside a Code node, default to individual HTTP Request nodes (proven
+pattern) OR ensure `NODE_FUNCTION_ALLOW_EXTERNAL=axios` is in the
+compose env before writing Code-node-based fetchers. Document the sandbox
+restriction clearly so future workflows don't rediscover it.
+
+---
+
 ## Lessons distilled
 
 1. **GCE cloud-init requires plain text user-data.** Not gzipped, not base64.
@@ -365,6 +423,10 @@ to see the restart count, which is the real tell.
    time.** After fixing the host file/dir confusion, `docker compose
    restart` is not enough — you need `docker compose rm -sf <svc> && up
    -d` to force the mount spec to be re-read.
+10. **n8n Code node sandbox has no HTTP primitives.** Neither `$helpers.httpRequest`
+    nor global `fetch` are available. Use individual HTTP Request nodes (the proven
+    pattern), or unlock `axios` via `NODE_FUNCTION_ALLOW_EXTERNAL=axios` in the n8n
+    service environment.
 
 ## Open questions for future sessions
 
