@@ -3,118 +3,87 @@
   "nodes": [
     {
       "parameters": {
-        "rule": {
-          "interval": [{ "field": "cronExpression", "expression": "30 5 * * 1-5" }]
-        },
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "30 5 * * 1-5" }] },
         "timezone": "America/Chicago"
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-1800, 0],
-      "id": "jb-schedule-001",
+      "position": [-1200, 0],
+      "id": "jb-sched",
       "name": "Schedule Trigger"
     },
     {
       "parameters": {
-        "jsCode": "// Fetch all JSON API sources.\n// Uses $helpers.httpRequest — available in n8n Code nodes (v1+).\n\nconst API_SOURCES = [\n  // RemoteOK — tag-specific JSON API\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=react' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=node' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=python' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=vue' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=flutter' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=devops' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=typescript' },\n  { name: 'remoteok', url: 'https://remoteok.com/api?tags=machine-learning' },\n  // Remotive — category JSON API\n  { name: 'remotive', url: 'https://remotive.com/api/remote-jobs?category=software-development&limit=100' },\n  { name: 'remotive', url: 'https://remotive.com/api/remote-jobs?category=artificial-intelligence&limit=100' },\n  { name: 'remotive', url: 'https://remotive.com/api/remote-jobs?category=devops&limit=100' },\n  // Jobicy — tag JSON API\n  { name: 'jobicy', url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&tag=react&count=50' },\n  { name: 'jobicy', url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&tag=python&count=50' },\n  { name: 'jobicy', url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&tag=devops&count=50' },\n  { name: 'jobicy', url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&tag=node&count=50' },\n  // Himalayas — keyword JSON API\n  { name: 'himalayas', url: 'https://himalayas.app/jobs/api/search?q=react&limit=100' },\n  { name: 'himalayas', url: 'https://himalayas.app/jobs/api/search?q=python&limit=100' },\n  { name: 'himalayas', url: 'https://himalayas.app/jobs/api/search?q=devops&limit=100' },\n  // Working Nomads — category JSON API\n  { name: 'workingnomads', url: 'https://www.workingnomads.com/api/exposed_jobs/?category=development' },\n  // Arbeitnow — remote filter JSON API\n  { name: 'arbeitnow', url: 'https://www.arbeitnow.com/api/job-board-api?remote=true' }\n];\n\nconst apiResults = [];\n\nfor (const src of API_SOURCES) {\n  try {\n    const res = await fetch(src.url, { headers: { 'User-Agent': 'BugsyBot/1.0 (coffey.codes)' } });\n    const data = await res.json();\n    apiResults.push({ name: src.name, url: src.url, data });\n  } catch (e) {\n    apiResults.push({ name: src.name, url: src.url, error: e.message });\n  }\n  await new Promise(r => setTimeout(r, 400));\n}\n\nreturn [{ json: { apiResults } }];"
+        "jsCode": "const axios = require('axios');\n\n// ── JSON APIs ─────────────────────────────────────────────────────────────────\nconst JSON_SOURCES = [\n  { id: 'remotive',         url: 'https://remotive.com/api/remote-jobs?category=software-development&limit=100' },\n  { id: 'remotive-ai',      url: 'https://remotive.com/api/remote-jobs?category=artificial-intelligence&limit=100' },\n  { id: 'jobicy',           url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&count=50' },\n  { id: 'workingnomads',    url: 'https://www.workingnomads.com/api/exposed_jobs/?category=development' },\n  { id: 'arbeitnow',        url: 'https://www.arbeitnow.com/api/job-board-api?remote=true' },\n];\n\n// ── RSS Feeds ─────────────────────────────────────────────────────────────────\nconst RSS_SOURCES = [\n  { id: 'wwr-frontend',      url: 'https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss' },\n  { id: 'wwr-backend',       url: 'https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss' },\n  { id: 'wwr-fullstack',     url: 'https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss' },\n  { id: 'wwr-devops',        url: 'https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss' },\n  { id: 'remotive-sw-rss',   url: 'https://remotive.com/remote-jobs/feed/software-development' },\n  { id: 'remotive-ai-rss',   url: 'https://remotive.com/remote-jobs/feed/artificial-intelligence' },\n  { id: 'rfj-react',         url: 'https://remotefirstjobs.com/rss/jobs/react.rss' },\n  { id: 'rfj-python',        url: 'https://remotefirstjobs.com/rss/jobs/python.rss' },\n  { id: 'rfj-ai',            url: 'https://remotefirstjobs.com/rss/jobs/ai.rss' },\n  { id: 'larajobs',          url: 'https://larajobs.com/feed' },\n  { id: 'wp-jobs',           url: 'https://jobs.wordpress.net/feed/' },\n  { id: 'pyjobs',            url: 'https://www.pyjobs.com/rss' },\n  { id: 'python-org',        url: 'https://www.python.org/jobs/feed/rss/' },\n  { id: 'vuejobs',           url: 'https://app.vuejobs.com/feed/posts' },\n  { id: 'authenticjobs',     url: 'https://authenticjobs.com/?feed=job_feed' },\n  { id: 'realwork-frontend', url: 'https://www.realworkfromanywhere.com/remote-frontend-jobs/rss.xml' },\n];\n\nasync function fetchOne(src, isRss) {\n  try {\n    const res = await axios.get(src.url, {\n      timeout: 15000,\n      responseType: isRss ? 'text' : 'json',\n      headers: { 'User-Agent': 'Bugsy-JobBot/1.0' },\n    });\n    return { id: src.id, ok: true, data: res.data };\n  } catch (e) {\n    return { id: src.id, ok: false, data: null, error: e.message };\n  }\n}\n\n// Fetch all sources concurrently — no more sequential chain.\nconst [jsonResults, rssResults] = await Promise.all([\n  Promise.all(JSON_SOURCES.map(s => fetchOne(s, false))),\n  Promise.all(RSS_SOURCES.map(s => fetchOne(s, true))),\n]);\n\nconst failed = [...jsonResults, ...rssResults].filter(r => !r.ok).map(r => r.id);\nreturn [{ json: { jsonResults, rssResults, failed } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1560, 0],
-      "id": "jb-fetch-api-001",
-      "name": "Fetch API Sources"
+      "position": [-960, 0],
+      "id": "jb-fetch",
+      "name": "Fetch All Sources"
     },
     {
       "parameters": {
-        "jsCode": "// Fetch all RSS feeds and parse them with a lightweight XML parser.\n\nfunction extractTag(tag, xml) {\n  const cdata = xml.match(new RegExp('<' + tag + '><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\/' + tag + '>'));\n  if (cdata) return cdata[1].trim();\n  const plain = xml.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\/' + tag + '>'));\n  return plain ? plain[1].replace(/<[^>]+>/g, '').trim() : '';\n}\n\nfunction extractLink(xml) {\n  const href = xml.match(/<link[^>]+href=\"([^\"]+)\"/);\n  if (href) return href[1].trim();\n  const tag = xml.match(/<link>([^<]*)<\\/link>/);\n  return tag ? tag[1].trim() : '';\n}\n\nfunction parseRSS(xml, sourceName) {\n  const itemRe = /<item[^>]*>([\\s\\S]*?)<\\/item>|<entry[^>]*>([\\s\\S]*?)<\\/entry>/g;\n  const jobs = [];\n  let m;\n  while ((m = itemRe.exec(xml)) !== null) {\n    const block = m[1] || m[2];\n    jobs.push({\n      source: sourceName,\n      title: extractTag('title', block),\n      link: extractLink(block) || extractTag('guid', block) || extractTag('id', block),\n      pubDate: extractTag('pubDate', block) || extractTag('published', block) || extractTag('updated', block),\n      description: extractTag('description', block) || extractTag('summary', block) || extractTag('content', block),\n      author: extractTag('author', block) || extractTag('dc:creator', block)\n    });\n  }\n  return jobs;\n}\n\nconst RSS_FEEDS = [\n  { name: 'weworkremotely-frontend',  url: 'https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss' },\n  { name: 'weworkremotely-backend',   url: 'https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss' },\n  { name: 'weworkremotely-fullstack', url: 'https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss' },\n  { name: 'weworkremotely-devops',    url: 'https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss' },\n  { name: 'remotive-software',        url: 'https://remotive.com/remote-jobs/feed/software-development' },\n  { name: 'remotive-ai',              url: 'https://remotive.com/remote-jobs/feed/artificial-intelligence' },\n  { name: 'remotive-devops',          url: 'https://remotive.com/remote-jobs/feed/devops' },\n  { name: 'remotefirstjobs-react',    url: 'https://remotefirstjobs.com/rss/jobs/react.rss' },\n  { name: 'remotefirstjobs-python',   url: 'https://remotefirstjobs.com/rss/jobs/python.rss' },\n  { name: 'remotefirstjobs-devops',   url: 'https://remotefirstjobs.com/rss/jobs/devops.rss' },\n  { name: 'remotefirstjobs-ai',       url: 'https://remotefirstjobs.com/rss/jobs/ai.rss' },\n  { name: 'remotefirstjobs-software', url: 'https://remotefirstjobs.com/rss/jobs/software-development.rss' },\n  { name: 'larajobs',                 url: 'https://larajobs.com/feed' },\n  { name: 'wordpress-jobs',           url: 'https://jobs.wordpress.net/feed/' },\n  { name: 'pyjobs',                   url: 'https://www.pyjobs.com/rss' },\n  { name: 'python-org',               url: 'https://www.python.org/jobs/feed/rss/' },\n  { name: 'vuejobs',                  url: 'https://app.vuejobs.com/feed/posts' },\n  { name: 'authenticjobs',            url: 'https://authenticjobs.com/?feed=job_feed' },\n  { name: 'jobspresso',               url: 'https://jobspresso.co/feed/?post_type=job_listing' },\n  { name: 'realwork-frontend',        url: 'https://www.realworkfromanywhere.com/remote-frontend-jobs/rss.xml' },\n  { name: 'realwork-backend',         url: 'https://www.realworkfromanywhere.com/remote-backend-jobs/rss.xml' },\n  { name: 'realwork-devops',          url: 'https://www.realworkfromanywhere.com/remote-devops-and-sysadmin-jobs/rss.xml' },\n  { name: 'djangojobboard',           url: 'https://djangojobboard.com/feed/' },\n  { name: 'remoteok-react',           url: 'https://remoteok.com/remote-react-jobs.rss' },\n  { name: 'remoteok-python',          url: 'https://remoteok.com/remote-python-jobs.rss' },\n  { name: 'remoteok-devops',          url: 'https://remoteok.com/remote-devops-jobs.rss' },\n  { name: 'jobicy-rss',               url: 'https://jobicy.com/feed/job_feed?job_categories=dev&job_types=full-time' }\n];\n\nconst rssResults = [];\n\nfor (const feed of RSS_FEEDS) {\n  try {\n    const res = await fetch(feed.url, { headers: { 'User-Agent': 'BugsyBot/1.0 (coffey.codes)', 'Accept': 'application/rss+xml, application/xml, text/xml, */*' } });\n    const xml = await res.text();\n    const parsed = parseRSS(xml, feed.name);\n    rssResults.push(...parsed);\n  } catch (e) {\n    // Don't let one bad feed kill the run\n  }\n  await new Promise(r => setTimeout(r, 300));\n}\n\nreturn [{ json: { rssResults } }];"
+        "jsCode": "function extractTag(tag, xml) {\n  const cdata = xml.match(new RegExp('<' + tag + '><!\\\\[CDATA\\\\[([\\\\s\\\\S]*?)\\\\]\\\\]><\\\\/' + tag + '>'));\n  if (cdata) return cdata[1].trim();\n  const plain = xml.match(new RegExp('<' + tag + '[^>]*>([\\\\s\\\\S]*?)<\\\\/' + tag + '>'));\n  return plain ? plain[1].replace(/<[^>]+>/g, '').trim() : '';\n}\nfunction extractLink(xml) {\n  const href = xml.match(/<link[^>]+href=\"([^\"]+)\"/);\n  if (href) return href[1].trim();\n  const tag = xml.match(/<link>([^<]*)<\\/link>/);\n  return tag ? tag[1].trim() : '';\n}\nfunction parseRSS(xml, src) {\n  const re = /<item[^>]*>([\\s\\S]*?)<\\/item>|<entry[^>]*>([\\s\\S]*?)<\\/entry>/g;\n  const out = []; let m;\n  while ((m = re.exec(xml)) !== null) {\n    const b = m[1] || m[2];\n    out.push({ source: src, title: extractTag('title', b), link: extractLink(b) || extractTag('guid', b), pubDate: extractTag('pubDate', b) || extractTag('published', b), description: extractTag('description', b) || extractTag('summary', b), company: extractTag('author', b) || extractTag('dc:creator', b) });\n  }\n  return out;\n}\n\nconst STACK = ['react','next.js','nextjs','vue','nuxt','angular','flutter','expo','node','nodejs','express','python','flask','django','fastapi','php','laravel','wordpress','typescript','javascript','docker','kubernetes','devops','terraform','aws','gcp','firebase','postgresql','mysql','mongodb','redis','openai','llm','langchain','gemini','machine learning','pytorch','tensorflow','three.js','threejs','mobile','ios','android'];\n\nfunction isRelevant(t, d) { const s = ((t||'')+(d||'')).toLowerCase(); return STACK.some(k => s.includes(k)); }\nfunction getTags(text) { const s = (text||'').toLowerCase(); return [...new Set(STACK.filter(k => s.includes(k)))]; }\nfunction nd(s) { if (!s) return null; try { const d = new Date(s); return isNaN(d.getTime()) ? null : d.toISOString(); } catch(e) { return null; } }\nfunction strip(s) { return (s||'').replace(/<[^>]+>/g,' ').replace(/\\s+/g,' ').trim().substring(0,600); }\n\nconst { jsonResults, rssResults } = $input.first().json;\nconst jobs = [];\nconst seen = new Set();\n\nfunction add(j) {\n  if (!j.url || seen.has(j.url)) return;\n  if (!isRelevant(j.title, j.desc)) return;\n  seen.add(j.url);\n  jobs.push({ source: j.src||'unknown', title: (j.title||'').substring(0,200), company: (j.company||'').substring(0,100), url: j.url, location: 'Remote', salary_raw: (j.salary||'').substring(0,100), tech_tags: getTags((j.title||'')+(j.desc||'')), description: strip(j.desc), posted_at: nd(j.date) });\n}\n\nfor (const r of jsonResults) {\n  if (!r.ok || !r.data) continue;\n  try {\n    if (r.id === 'remotive' || r.id === 'remotive-ai') {\n      for (const j of (r.data.jobs||[])) add({src:r.id,title:j.title,company:j.company_name,url:j.url,salary:j.salary,desc:j.description,date:j.publication_date});\n    } else if (r.id === 'jobicy') {\n      for (const j of (r.data.jobs||[])) add({src:'jobicy',title:j.jobTitle,company:j.companyName,url:j.url,salary:j.annualSalaryMin?('$'+j.annualSalaryMin+'-$'+j.annualSalaryMax):'',desc:j.jobDescription,date:j.pubDate});\n    } else if (r.id === 'workingnomads') {\n      for (const j of (Array.isArray(r.data)?r.data:[])) add({src:'workingnomads',title:j.title,company:j.company,url:j.url,desc:j.description,date:j.pub_date});\n    } else if (r.id === 'arbeitnow') {\n      for (const j of ((r.data.data||[]).filter(x=>x.remote))) add({src:'arbeitnow',title:j.title,company:j.company_name,url:j.url,desc:j.description,date:j.created_at});\n    }\n  } catch(e) {}\n}\n\nfor (const r of rssResults) {\n  if (!r.ok || !r.data) continue;\n  try {\n    for (const item of parseRSS(r.data, r.id)) {\n      add({src:item.source,title:item.title,company:item.company,url:item.link,desc:item.description,date:item.pubDate});\n    }\n  } catch(e) {}\n}\n\nreturn [{ json: { jobs, total: jobs.length } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1320, 0],
-      "id": "jb-fetch-rss-001",
-      "name": "Fetch RSS Sources"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Normalize all sources to a common schema and filter to Anthony's stack.\n\nconst apiResults = $('Fetch API Sources').first().json.apiResults || [];\nconst rssResults = $('Fetch RSS Sources').first().json.rssResults || [];\n\nconst STACK = [\n  'react','react native','reactnative','next.js','nextjs',\n  'vue','nuxt','angular','flutter','ionic','expo',\n  'node','node.js','nodejs','express',\n  'python','flask','django','fastapi',\n  'php','laravel','wordpress','wp',\n  'typescript','javascript',\n  'docker','kubernetes','k8s','devops','terraform','ansible','ci/cd','cicd','github actions',\n  'aws','gcp','google cloud','firebase','cloud run',\n  'postgresql','postgres','mysql','mongodb','redis','firestore','dynamodb',\n  'openai','llm','langchain','gemini','ai engineer','ml engineer','machine learning','pytorch','tensorflow','three.js','threejs','webgl',\n  'react native','mobile','ios','android'\n];\n\nfunction isRelevant(title, desc) {\n  const t = ((title || '') + ' ' + (desc || '')).toLowerCase();\n  return STACK.some(kw => t.includes(kw));\n}\n\nfunction extractTags(text) {\n  const t = (text || '').toLowerCase();\n  return [...new Set(STACK.filter(kw => t.includes(kw)))];\n}\n\nfunction normalizeDate(s) {\n  if (!s) return null;\n  try { const d = new Date(s); return isNaN(d.getTime()) ? null : d.toISOString(); } catch { return null; }\n}\n\nfunction stripHtml(s) {\n  return (s || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().substring(0, 600);\n}\n\nconst jobs = [];\nconst seen = new Set();\n\nfunction add(job) {\n  if (!job.url || seen.has(job.url)) return;\n  if (!isRelevant(job.title, job.description)) return;\n  seen.add(job.url);\n  jobs.push({\n    source:      job.source || 'unknown',\n    title:       (job.title || '').substring(0, 200),\n    company:     (job.company || '').substring(0, 100),\n    url:         job.url,\n    location:    job.location || 'Remote',\n    salary_raw:  (job.salary_raw || '').substring(0, 100),\n    tech_tags:   extractTags((job.title || '') + ' ' + (job.description || '')),\n    description: stripHtml(job.description),\n    posted_at:   normalizeDate(job.posted_at)\n  });\n}\n\n// Process JSON API results\nfor (const r of apiResults) {\n  if (r.error || !r.data) continue;\n  const { name, data } = r;\n\n  if (name === 'remoteok') {\n    for (const j of (Array.isArray(data) ? data.slice(1) : [])) {\n      add({ source:'remoteok', title:j.position||j.title, company:j.company,\n        url:j.url||`https://remoteok.com/remote-jobs/${j.id}`,\n        salary_raw:j.salary, description:j.description, posted_at:j.date });\n    }\n  } else if (name === 'remotive') {\n    for (const j of (data.jobs || [])) {\n      add({ source:'remotive', title:j.title, company:j.company_name,\n        url:j.url, salary_raw:j.salary, description:j.description,\n        posted_at:j.publication_date });\n    }\n  } else if (name === 'jobicy') {\n    for (const j of (data.jobs || [])) {\n      add({ source:'jobicy', title:j.jobTitle, company:j.companyName,\n        url:j.url, salary_raw:j.annualSalaryMin?`$${j.annualSalaryMin}-$${j.annualSalaryMax}`:'',\n        description:j.jobDescription, posted_at:j.pubDate });\n    }\n  } else if (name === 'himalayas') {\n    for (const j of (data.jobs || [])) {\n      add({ source:'himalayas', title:j.title, company:j.company&&j.company.name,\n        url:j.applicationLink||`https://himalayas.app/jobs/${j.slug}`,\n        description:j.description, posted_at:j.createdAt });\n    }\n  } else if (name === 'workingnomads') {\n    for (const j of (Array.isArray(data)?data:[])) {\n      add({ source:'workingnomads', title:j.title, company:j.company,\n        url:j.url, description:j.description, posted_at:j.pub_date });\n    }\n  } else if (name === 'arbeitnow') {\n    for (const j of (data.data||[]).filter(j=>j.remote)) {\n      add({ source:'arbeitnow', title:j.title, company:j.company_name,\n        url:j.url, description:j.description, posted_at:j.created_at });\n    }\n  }\n}\n\n// Process RSS results\nfor (const item of rssResults) {\n  add({ source:item.source, title:item.title, company:item.author,\n    url:item.link, description:item.description, posted_at:item.pubDate });\n}\n\nreturn [{ json: { jobs, total: jobs.length } }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-1080, 0],
-      "id": "jb-normalize-001",
+      "position": [-720, 0],
+      "id": "jb-normalize",
       "name": "Normalize + Filter"
     },
     {
       "parameters": {
-        "jsCode": "const jobs = $input.first().json.jobs || [];\n\nif (jobs.length === 0) {\n  return [{ json: { sql: 'SELECT 1', total: 0 } }];\n}\n\nfunction esc(v) { return String(v||'').replace(/'/g,\"''\"); }\nfunction escArr(a) {\n  if (!a||!a.length) return \"'{}'\";\n  return 'ARRAY[' + a.map(t=>`'${esc(t)}'`).join(',') + ']';\n}\n\nconst rows = jobs.map(j =>\n  `('${esc(j.source)}','${esc(j.title)}','${esc(j.company)}','${esc(j.url)}',` +\n  `'${esc(j.location)}','${esc(j.salary_raw)}',${escArr(j.tech_tags)},` +\n  `'${esc(j.description)}',${j.posted_at ? `'${j.posted_at}'` : 'NULL'})`\n);\n\nconst sql =\n  'INSERT INTO job_listings (source,title,company,url,location,salary_raw,tech_tags,description,posted_at)\\nVALUES\\n' +\n  rows.join(',\\n') +\n  '\\nON CONFLICT (url) DO NOTHING';\n\nreturn [{ json: { sql, total: jobs.length } }];"
+        "jsCode": "const jobs = $input.first().json.jobs || [];\nif (jobs.length === 0) return [{ json: { sql: 'SELECT 1', total: 0 } }];\nfunction esc(v) { return String(v||'').replace(/'/g,\"''\"); }\nfunction escArr(a) { if (!a||!a.length) return \"'{}'\" ; return 'ARRAY['+a.map(t=>\"'\"+ esc(t)+\"'\").join(',')+']'; }\nconst rows = jobs.map(j=>`('${esc(j.source)}','${esc(j.title)}','${esc(j.company)}','${esc(j.url)}','${esc(j.location)}','${esc(j.salary_raw)}',${escArr(j.tech_tags)},'${esc(j.description)}',${j.posted_at?\"'\"+j.posted_at+\"'\":'NULL'})`);\nconst sql = 'INSERT INTO job_listings (source,title,company,url,location,salary_raw,tech_tags,description,posted_at)\\nVALUES\\n'+rows.join(',\\n')+'\\nON CONFLICT (url) DO NOTHING';\nreturn [{ json: { sql, total: jobs.length } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-840, 0],
-      "id": "jb-prepare-sql-001",
+      "position": [-480, 0],
+      "id": "jb-sql",
       "name": "Prepare Insert SQL"
     },
     {
-      "parameters": {
-        "operation": "executeQuery",
-        "query": "={{ $json.sql }}",
-        "options": {}
-      },
+      "parameters": { "operation": "executeQuery", "query": "={{ $json.sql }}", "options": {} },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-600, 0],
-      "id": "jb-upsert-001",
+      "position": [-240, 0],
+      "id": "jb-postgres",
       "name": "Upsert to Postgres",
-      "credentials": {
-        "postgres": {
-          "id": "oZCyktBzxpp0w1k0",
-          "name": "Postgres — agent DB"
-        }
-      }
+      "credentials": { "postgres": { "id": "oZCyktBzxpp0w1k0", "name": "Postgres — agent DB" } }
     },
     {
       "parameters": {
-        "jsCode": "const total = $('Prepare Insert SQL').first().json.total || 0;\nconst date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });\nreturn [{ json: {\n  slackText: `📋 *Job Board Sweep — ${date}*\\nScraped 30+ niche boards. *${total} new remote jobs* pulled and stored.\\nHead to <https://n8n.coffey.codes/webhook/job-board|the board> to browse 'em, skip.`\n}}];"
+        "jsCode": "const total = $('Prepare Insert SQL').first().json.total || 0;\nconst date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });\nreturn [{ json: { slackText: `📋 *Job Board Sweep — ${date}*\\n*${total} new remote jobs* pulled from 20+ niche boards and stored.\\nBrowse 'em: <https://n8n.coffey.codes/webhook/job-board|coffey.codes job board>` } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-360, 0],
-      "id": "jb-format-summary-001",
+      "position": [0, 0],
+      "id": "jb-summary",
       "name": "Format Slack Summary"
     },
     {
       "parameters": {
         "select": "channel",
-        "channelId": {
-          "__rl": true,
-          "value": "C0AV83XUSTU",
-          "mode": "id"
-        },
+        "channelId": { "__rl": true, "value": "C0AV83XUSTU", "mode": "id" },
         "text": "={{ $json.slackText }}",
         "otherOptions": {}
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
-      "position": [-120, 0],
-      "id": "jb-slack-001",
+      "position": [240, 0],
+      "id": "jb-slack",
       "name": "Send to Mulberry Street",
-      "credentials": {
-        "slackApi": {
-          "id": "TIP9AbQBq7X5Qidd",
-          "name": "Slack - Bugsy"
-        }
-      }
+      "credentials": { "slackApi": { "id": "TIP9AbQBq7X5Qidd", "name": "Slack - Bugsy" } }
     }
   ],
   "pinData": {},
   "connections": {
-    "Schedule Trigger":     { "main": [[{"node": "Fetch API Sources",     "type": "main", "index": 0}]] },
-    "Fetch API Sources":    { "main": [[{"node": "Fetch RSS Sources",      "type": "main", "index": 0}]] },
-    "Fetch RSS Sources":    { "main": [[{"node": "Normalize + Filter",     "type": "main", "index": 0}]] },
-    "Normalize + Filter":   { "main": [[{"node": "Prepare Insert SQL",     "type": "main", "index": 0}]] },
-    "Prepare Insert SQL":   { "main": [[{"node": "Upsert to Postgres",     "type": "main", "index": 0}]] },
-    "Upsert to Postgres":   { "main": [[{"node": "Format Slack Summary",   "type": "main", "index": 0}]] },
-    "Format Slack Summary": { "main": [[{"node": "Send to Mulberry Street","type": "main", "index": 0}]] }
+    "Schedule Trigger":    { "main": [[{"node": "Fetch All Sources",    "type": "main", "index": 0}]] },
+    "Fetch All Sources":   { "main": [[{"node": "Normalize + Filter",   "type": "main", "index": 0}]] },
+    "Normalize + Filter":  { "main": [[{"node": "Prepare Insert SQL",   "type": "main", "index": 0}]] },
+    "Prepare Insert SQL":  { "main": [[{"node": "Upsert to Postgres",   "type": "main", "index": 0}]] },
+    "Upsert to Postgres":  { "main": [[{"node": "Format Slack Summary", "type": "main", "index": 0}]] },
+    "Format Slack Summary":{ "main": [[{"node": "Send to Mulberry Street","type": "main", "index": 0}]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }
