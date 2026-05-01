@@ -25,6 +25,7 @@
       "typeVersion": 2.5,
       "position": [-560, 0],
       "id": "jb-ui-query-001",
+      "alwaysOutputData": true,
       "name": "Query Jobs",
       "credentials": {
         "postgres": {
