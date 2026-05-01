@@ -13,9 +13,9 @@ the strategy overview).
 
 ## 1. Mission (one line)
 
-Anthony Coffey runs coffey.codes — a senior solo dev/AI consulting practice
-delivering "Dependable Transformation" for SMBs and growing tech orgs that
-need real engineering, not hype.
+Anthony Coffey runs coffey.codes — a senior solo developer / AI implementer
+who ships production-grade work for SMBs and growing tech orgs. Maker first,
+hands-on the keyboard, not an advisor or strategist-for-hire.
 
 ## 2. Pricing
 
@@ -24,7 +24,7 @@ need real engineering, not hype.
 | Discovery / strategy | **$150–$250/hr** | First call free (~20 min); paid hours after that |
 | Project work | **$5k+ minimum** | Most projects $5k–$50k; scoped fixed or T&M |
 | Part-time retainer | **$1,500/week** | ~2 days/wk equivalent; ideal for ongoing eng partner |
-| Full-time retainer | **$2,500/week** | Embedded senior eng / fractional CTO |
+| Full-time retainer | **$2,500/week** | Embedded senior engineer / lead dev role on a single team |
 
 All figures **negotiable** — these are anchor numbers. When Bugsy drafts
 outreach, default to "let's start with a brief call" rather than leading
@@ -52,11 +52,12 @@ Listed in order of strategic priority for outbound focus.
 - **Need:** modern site that converts, with analytics/tracking baked in
 - **Why they fit:** they want web + marketing tech as one integrated thing, not a patchwork
 
-### ICP 4 — Startups / agencies / tech teams needing capacity
+### ICP 4 — Startups / agencies / tech teams needing senior IC capacity
 - **Industries:** any
 - **Buyer titles:** founder, CTO, eng manager, agency owner
-- **Need:** senior engineering capacity without FTE overhead
-- **Why they fit:** spike workload, need a hired gun, not a long hiring loop
+- **Need:** experienced hands on the keyboard — a senior dev or lead dev who can ship without ramp
+- **Why they fit:** spike workload, key project they can't staff fast enough, need someone who can own delivery without daily oversight
+- **What this is NOT:** a CTO role. Anthony executes and leads at the IC/lead level — strategy, board reporting, fundraising support, hiring loops are out of scope.
 
 ## 4. Anti-ICP (do not pursue)
 
@@ -64,7 +65,8 @@ Listed in order of strategic priority for outbound focus.
 - **Pure B2C consumer apps** — not the lane (Insta/FB ads aren't even prioritized channels)
 - **Crypto / Web3 speculative plays** — regulatory + reputational risk
 - **Heavily regulated industries** (defense, healthcare with HIPAA scope, finance with SOC2 scope) — compliance overhead too high for solo
-- **Companies that just hired a senior in-house eng/CTO** — fractional need is gone; they want builders, not partners
+- **Companies looking for a Fractional CTO / strategic advisor** — wrong fit. Anthony is a maker, not a strategist-for-hire. Decline gracefully.
+- **Companies that just hired a senior in-house engineer** — capacity need is gone
 - **"Move fast and break things" cultures expecting next-week delivery** — quality bar mismatch
 - **Pure ML research / academic AI** — not Anthony's lane (he's applied/practical, not research)
 - **Anyone explicitly seeking "cheap" or "offshore-equivalent" rates** — wrong tier
@@ -76,18 +78,18 @@ Listed in order of strategic priority for outbound focus.
 
 **Six pillars** (Bugsy can pick whichever fits the prospect):
 1. **Project Certainty** — projects ship, no stalls, no surprises
-2. **Senior Engineering Partner** — 12+ years, no junior bait-and-switch
-3. **Built for Future Growth** — architecture decisions today don't bite you in 18 months
-4. **Practical AI Advantage** — AI grounded in real engineering, not slideware
-5. **Production-Ready Expertise** — code that runs at 3am without paging anyone
+2. **Senior Hands on the Keyboard** — 12+ years shipping real systems; no junior bait-and-switch, no "strategy deck only" deliverables
+3. **Built for Future Growth** — architecture decisions today don't bite you in 18 months, experience with battle tested solutions
+4. **Practical AI Advantage** — utilizing the latest tools for AI augmented workflows, but no "vibe coding"
+5. **Production-Ready Expertise** — I know how to set things up correctly: CI/CD with status checks, uptime checks on prod environments, real sysadmin and devops experience
 6. **Integrated Tech for Results** — web + analytics + automation as one cohesive system
 
 **Site title / SEO positioning:** "Solutions Architect & AI/ML Specialist."
 
 **One-line elevator pitch Bugsy can use:**
-> "Senior solo engineer/AI consultant out of Austin — 12 years building reliable
-> production systems. I help SMBs and growing tech orgs ship real work without
-> agency overhead or junior-team chaos."
+> "Senior solo developer out of Austin — 12 years shipping production systems.
+> I'm the experienced IC you bring in when you need real work done without
+> agency overhead or junior-team chaos. Maker first, on the keyboard daily."
 
 ## 6. Pain points solved
 
@@ -97,7 +99,8 @@ What prospects are feeling when they're ready for Anthony:
 - Tech debt slowing every release
 - AI initiatives that fizzled because the engineering foundation wasn't there
 - Need to integrate LLMs/automation but no in-house expertise
-- Need senior eng capacity but can't justify a $250k FTE for a 6-month effort
+- Need senior dev capacity but can't justify a full-time hire for a 6-month effort
+- Have a project that needs a confident lead developer without the overhead of running a hiring loop
 - SMB site that doesn't convert, has no tracking, can't be measured
 
 ## 7. Buying signals (Bugsy: surface these)
@@ -107,7 +110,7 @@ them prominently in the brief and use them as conversation hooks in
 drafted outreach.
 
 ### Strong signals (act on these)
-1. **Hiring senior backend/full-stack engineers with $140k+ comp** — they have budget and they need senior delivery; fractional pitch fits
+1. **Hiring senior backend/full-stack engineers with $140k+ comp** — they have budget and they need senior delivery
 2. **Recently raised seed or Series A** in target industries (SaaS, fintech, healthtech) — fresh capital, scaling pressure, often need eng hands before they can hire
 3. **Job postings mentioning "tech debt", "legacy modernization", "rebuild", "platform overhaul"** — explicit signal they know they have the problem Anthony solves
 4. **Mentions of LLM, GenAI, "AI initiative", "AI strategy" in careers page, recent press, blog, or LinkedIn** — they're exploring; pre-disaster window is the best time to engage
@@ -118,7 +121,7 @@ drafted outreach.
 7. **Tech stack on BuiltWith/Wappalyzer matches Anthony's stack** — short ramp time, immediate fit
 8. **CTO/founder publicly posting about scaling pain, hiring difficulty, or "what we wish we'd done differently"** — emotional readiness
 9. **Recent product launch + visibly broken/slow site** — overwhelmed, needs help yesterday
-10. **Job posting open >60 days for senior eng role** — they can't find the FTE; fractional is the bridge
+10. **Job posting open >60 days for senior eng role** — they can't find the FTE, or dont have access to quality talent.
 11. **Acquisition or merger announcement** — integration work is on someone's plate
 12. **Conference talks or podcast appearances by founder/CTO mentioning their stack matching Anthony's** — values match, easier rapport
 
@@ -126,7 +129,7 @@ drafted outreach.
 13. **Austin-based** — auto-bonus on the score, easier to convert via in-person
 
 ### Negative signals (drop the score)
-- Just hired a CTO/VP Eng in last 90 days (fractional need is dead)
+- Just hired a CTO/VP Eng in last 90 days
 - Public layoffs in last 90 days (budget gone)
 - Funded by series later than B and revenue >$10M ARR (probably want full agencies, not solo)
 - All-in on Salesforce/SAP/.NET stacks (stack mismatch; long ramp)
@@ -157,7 +160,7 @@ Default ladder (least → most committed):
 2. **Discovery hour** ($150–$250) — when they want depth before deciding
 3. **Scoped pilot project** — typically $5k–$15k, 2–4 weeks
 4. **Part-time retainer** — $1,500/wk, ongoing partner role
-5. **Full-time retainer / fractional CTO** — $2,500/wk
+5. **Full-time retainer / embedded senior engineer** — $2,500/wk
 
 Existing landing pages Bugsy can link in outreach (live at coffey.codes):
 - `/lp/practical-ai`
