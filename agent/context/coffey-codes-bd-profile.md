@@ -41,10 +41,11 @@ Listed in order of strategic priority for outbound focus.
 - **Why they fit:** mature enough to pay real rates; small enough to value a senior solo over agency overhead
 
 ### ICP 2 — Forward-thinking businesses (50–500 employees)
-- **Industries:** tech, finance, healthcare, logistics, MarTech
+- **Industries:** tech, finance, healthtech, logistics, MarTech
 - **Buyer titles:** CTO, CIO, Head of Innovation, Director of Data Science
 - **Need:** practical AI integration, data engineering for AI, AI strategy without theory
 - **Why they fit:** data-rich, exploring AI, burned by theory-only consultants
+- **Note:** Anthony has healthtech domain experience — priority vertical. Anti-ICP only when engagement requires owning HIPAA compliance architecture end-to-end.
 
 ### ICP 3 — SMBs needing real web presence
 - **Industries:** local services, professional firms, growing brands
@@ -64,7 +65,8 @@ Listed in order of strategic priority for outbound focus.
 - **Sub-$5k budgets** — opportunity cost too high; refer out or skip
 - **Pure B2C consumer apps** — not the lane (Insta/FB ads aren't even prioritized channels)
 - **Crypto / Web3 speculative plays** — regulatory + reputational risk
-- **Heavily regulated industries** (defense, healthcare with HIPAA scope, finance with SOC2 scope) — compliance overhead too high for solo
+- **Heavily regulated industries** (defense, finance with SOC2 scope) — compliance overhead too high for solo
+- **Healthcare with full HIPAA engineering scope** — anti-ICP ONLY when the engagement requires Anthony to own HIPAA compliance architecture end-to-end; healthtech companies where compliance is handled by their internal team are fine and welcome (Anthony has healthtech domain experience)
 - **Companies looking for a Fractional CTO / strategic advisor** — wrong fit. Anthony is a maker, not a strategist-for-hire. Decline gracefully.
 - **Companies that just hired a senior in-house engineer** — capacity need is gone
 - **"Move fast and break things" cultures expecting next-week delivery** — quality bar mismatch
