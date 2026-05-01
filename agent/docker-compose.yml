@@ -149,6 +149,7 @@ services:
       N8N_PROXY_HOPS: 1
       GENERIC_TIMEZONE: ${TZ}
       N8N_RUNNERS_ENABLED: "true"
+      NODE_FUNCTION_ALLOW_EXTERNAL: axios
     volumes:
       - n8n-data:/home/node/.n8n
     networks: [agent-net]
