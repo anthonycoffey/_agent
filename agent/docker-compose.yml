@@ -1,7 +1,8 @@
 # Agent stack — docker-compose.
 #
 # Originally laid down by Terraform's cloud-init as a "data + model" foundation.
-# Phase 1 wires in n8n + Cloudflare Tunnel. Still to add: Langfuse, MCP servers.
+# Phase 1 wires in n8n + Cloudflare Tunnel + SearXNG (web search for Bugsy).
+# Still to add: Langfuse, MCP servers.
 
 name: agent
 
@@ -16,6 +17,7 @@ volumes:
   ollama-data:
   openwebui-data:
   n8n-data:
+  searxng-data:
 
 services:
   # ---------- Data layer ----------
@@ -163,3 +165,26 @@ services:
     command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
     networks: [agent-net]
     depends_on: [n8n]
+
+  # ---------- Search layer ----------
+  #
+  # SearXNG — self-hosted metasearch. Bugsy queries it for prospect research
+  # and any other "search the web" task. Internal-only; no public exposure.
+  # Query via http://searxng:8080/search?q=...&format=json from other services.
+
+  searxng:
+    image: searxng/searxng:latest
+    container_name: agent-searxng
+    restart: unless-stopped
+    environment:
+      SEARXNG_BASE_URL: http://searxng:8080/
+      SEARXNG_SECRET: ${SEARXNG_SECRET}
+    volumes:
+      - searxng-data:/var/cache/searxng
+      - type: bind
+        source: ./searxng/settings.yml
+        target: /etc/searxng/settings.yml
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [agent-net]
