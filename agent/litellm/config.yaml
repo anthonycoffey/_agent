@@ -20,6 +20,19 @@ model_list:
       model: openai/gpt-4o-mini
       api_key: os.environ/OPENAI_API_KEY
 
+  # ---- Hosted: Google Gemini ----
+  # Pro for synthesis-heavy work (research briefs, long-context tasks).
+  # Flash for fast/cheap classification, summaries, agent loops.
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: os.environ/GEMINI_API_KEY
+
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+
   # ---- Local: Ollama ----
   - model_name: qwen3
     litellm_params:
