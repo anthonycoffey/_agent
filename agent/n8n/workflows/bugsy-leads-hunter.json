@@ -42,7 +42,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1560, -200],
+      "position": [-1560, 0],
       "id": "searxng-query-1-001",
       "name": "SearXNG Query 1 — High-Comp Eng Hire"
     },
@@ -69,7 +69,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1560, 0],
+      "position": [-1320, 0],
       "id": "searxng-query-2-001",
       "name": "SearXNG Query 2 — Recent Raise"
     },
@@ -96,7 +96,7 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1560, 200],
+      "position": [-1080, 0],
       "id": "searxng-query-3-001",
       "name": "SearXNG Query 3 — Explicit Problem Signal"
     },
@@ -123,17 +123,17 @@
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [-1560, 400],
+      "position": [-840, 0],
       "id": "searxng-query-4-001",
       "name": "SearXNG Query 4 — Premature ML Hire"
     },
     {
       "parameters": {
-        "jsCode": "// Collect results from all 4 SearXNG query nodes.\n// Each node's output is accessed via $('<NodeName>').item.json.results\nconst allResults = [\n  ...($('SearXNG Query 1 — High-Comp Eng Hire').item.json.results || []),\n  ...($('SearXNG Query 2 — Recent Raise').item.json.results || []),\n  ...($('SearXNG Query 3 — Explicit Problem Signal').item.json.results || []),\n  ...($('SearXNG Query 4 — Premature ML Hire').item.json.results || [])\n];\n\n// Deduplicate by domain, keeping first occurrence per domain.\n// Extract {company, url, title, snippet} per result.\nconst seen = new Set();\nconst unique = [];\n\nfor (const r of allResults) {\n  if (!r.url) continue;\n  let domain;\n  try {\n    domain = new URL(r.url).hostname.replace(/^www\\./, '');\n  } catch (e) {\n    continue;\n  }\n  if (seen.has(domain)) continue;\n  seen.add(domain);\n\n  unique.push({\n    company: r.title ? r.title.split('|')[0].split('-')[0].split('–')[0].trim() : domain,\n    url: r.url,\n    domain,\n    title: r.title || '',\n    snippet: (r.content || '').replace(/\\s+/g, ' ').trim().substring(0, 300)\n  });\n\n  if (unique.length >= 20) break;\n}\n\n// Return as a single item containing the array so the next node\n// (LLM scoring) receives all prospects in one call.\nreturn [{ json: { prospects: unique } }];"
+        "jsCode": "// All 4 SearXNG nodes ran sequentially upstream, so their outputs\n// are all available by name in the execution context.\nconst allResults = [\n  ...($('SearXNG Query 1 — High-Comp Eng Hire').item.json.results || []),\n  ...($('SearXNG Query 2 — Recent Raise').item.json.results || []),\n  ...($('SearXNG Query 3 — Explicit Problem Signal').item.json.results || []),\n  ...($('SearXNG Query 4 — Premature ML Hire').item.json.results || [])\n];\n\n// Deduplicate by domain, keeping first occurrence.\nconst seen = new Set();\nconst unique = [];\n\nfor (const r of allResults) {\n  if (!r.url) continue;\n  let domain;\n  try {\n    domain = new URL(r.url).hostname.replace(/^www\\./, '');\n  } catch (e) {\n    continue;\n  }\n  if (seen.has(domain)) continue;\n  seen.add(domain);\n\n  unique.push({\n    company: r.title\n      ? r.title.split('|')[0].split(' - ')[0].split(' – ')[0].trim()\n      : domain,\n    url: r.url,\n    domain,\n    title: r.title || '',\n    snippet: (r.content || '').replace(/\\s+/g, ' ').trim().substring(0, 300)\n  });\n\n  if (unique.length >= 20) break;\n}\n\nreturn [{ json: { prospects: unique } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-1200, 100],
+      "position": [-600, 0],
       "id": "merge-dedup-001",
       "name": "Merge + Deduplicate"
     },
@@ -151,7 +151,7 @@
               "content": "You are Bugsy's scoring engine — a cold, analytical unit that scores prospects against Anthony Coffey's BD profile buying signals. No prose, no personality, only valid JSON output.\n\n=================================================================\nCOFFEY.CODES BD PROFILE — source of truth for scoring\n=================================================================\n\n# Mission\nAnthony Coffey runs coffey.codes — a senior solo developer / AI implementer who ships production-grade work for SMBs and growing tech orgs. Maker first, hands-on the keyboard, NOT an advisor or strategist-for-hire.\n\n# Pricing (anchor numbers)\n- Project work: $5k+ minimum, most $5k–$50k\n- Part-time retainer: $1,500/week (~2 days/wk)\n- Full-time retainer: $2,500/week (embedded senior engineer)\n\n# ICPs (canonical, in priority order)\n1. ICP1 — Established SMEs (20–200 emp): SaaS, professional services, e-commerce, non-profits. Buyers: CTO, VP Eng, Head of Product, founder. Need: custom builds, modernization, reliable long-term partner.\n2. ICP2 — Forward-thinking businesses (50–500 emp): tech, finance, healthcare, logistics, MarTech. Buyers: CTO, CIO, Head of Innovation, Director of Data Science. Need: practical AI integration, data engineering for AI.\n3. ICP3 — SMBs needing real web presence: local services, professional firms, growing brands. Buyers: owner, marketing lead. Need: modern site that converts, analytics baked in.\n4. ICP4 — Startups / agencies / tech teams needing senior IC capacity: any industry. Need: experienced hands on keyboard, lead dev who ships without ramp. NOT a fractional CTO role.\n\n# Anti-ICP (score 1–3, never pursue)\n- Sub-$5k budgets / consumer apps / crypto-Web3\n- Heavily regulated (defense, HIPAA, SOC2 finance)\n- Companies seeking Fractional CTO / strategic advisor only\n- Just hired a senior in-house engineer or CTO\n- 'Move fast and break things' culture\n- Pure ML research / academic AI\n- Anyone seeking 'cheap' or 'offshore-equivalent' rates\n- White-label cheap dev work agencies\n- Public layoffs in last 90 days (budget gone)\n- Funded Series C+ with >$10M ARR (want full agencies)\n- All-in on Salesforce/SAP/.NET stacks\n\n# Buying signals to score against (13 total)\n## Strong signals (each adds 1.5 to base score)\n1. Hiring senior backend/full-stack engineers with $140k+ comp\n2. Recently raised seed or Series A in target industries (SaaS, fintech, healthtech)\n3. Job postings mentioning 'tech debt', 'modernization', 'rebuild', 'platform overhaul'\n4. Mentions of LLM, GenAI, 'AI initiative', 'AI strategy' in careers/press/blog\n5. Hiring 'AI engineer' but company is tiny (<30 ppl) — consulting fits better\n## Medium signals (each adds 0.75)\n6. Open GitHub issues stale 30+ days on Node/Python/React/TS repos\n7. Tech stack matches Anthony's (Node, Python, React, TypeScript)\n8. CTO/founder publicly posting about scaling pain or hiring difficulty\n9. Recent product launch + visibly broken/slow site\n10. Job posting open >60 days for senior eng role (can't find the FTE)\n11. Acquisition or merger announcement\n12. Conference talks/podcasts mentioning matching stack\n## Geographic boost (+0.5 to score)\n13. Austin-based company\n\n# Scoring guide\n- Start at a base of 3.0\n- Add signal weights above, cap at 10\n- Apply anti-ICP: if ANY anti-ICP condition is met, cap score at 3 regardless\n- Round to nearest integer\n\n=================================================================\nYOUR TASK\n=================================================================\n\nYou will receive a JSON array of prospect objects. For each prospect, score it 1–10 against the BD profile signals based on the url, title, and snippet provided. Infer as much as possible from the data given.\n\nOutput a JSON array — one entry per prospect — matching this schema exactly:\n\n[\n  {\n    \"company\": \"company name\",\n    \"url\": \"original url\",\n    \"domain\": \"domain without www\",\n    \"score\": <integer 1-10>,\n    \"icpCategory\": \"ICP1\" | \"ICP2\" | \"ICP3\" | \"ICP4\" | \"Anti-ICP\",\n    \"signals\": [\"short label of each signal matched\"],\n    \"reason\": \"one sentence explaining score in plain language\"\n  }\n]\n\nRules:\n- Output ONLY the JSON array. No markdown code fences, no commentary.\n- If snippet/title provide insufficient data, score conservatively (4–5) and say so in reason.\n- Never hallucinate signals not inferable from the provided data.\n- Anti-ICP hits ALWAYS cap score at 3."
             },
             {
-              "content": "=Prospects to score (JSON array):\n{{ JSON.stringify($json.prospects, null, 2) }}\n\nScore each one now. Return only the JSON array."
+              "content": "=Prospects to score (JSON array):\n={{ JSON.stringify($json.prospects, null, 2) }}\n\nScore each one now. Return only the JSON array."
             }
           ]
         },
@@ -161,7 +161,7 @@
       },
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
-      "position": [-960, 100],
+      "position": [-360, 0],
       "id": "score-prospects-001",
       "name": "Score Prospects",
       "credentials": {
@@ -173,33 +173,43 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse the LLM's JSON array output. Strip code fences if present.\nconst raw = $input.first().json.message.content;\nconst cleaned = raw\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/\\s*```\\s*$/i, '')\n  .trim();\n\nlet scored;\ntry {\n  scored = JSON.parse(cleaned);\n} catch (err) {\n  // Return a minimal error item so the workflow doesn't die silently\n  return [{ json: {\n    parseError: err.message,\n    rawOutput: raw,\n    scored: []\n  }}];\n}\n\n// Emit as a single item with the full array so the IF node can iterate\nreturn [{ json: { scored } }];"
+        "jsCode": "// Parse the LLM's JSON array output. Strip code fences if present.\nconst raw = $input.first().json.message.content;\nconst cleaned = raw\n  .replace(/^```(?:json)?\\s*/i, '')\n  .replace(/\\s*```\\s*$/i, '')\n  .trim();\n\nlet scored;\ntry {\n  scored = JSON.parse(cleaned);\n} catch (err) {\n  return [{ json: {\n    parseError: err.message,\n    rawOutput: raw,\n    scored: []\n  }}];\n}\n\nreturn [{ json: { scored } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-720, 100],
+      "position": [-120, 0],
       "id": "parse-scores-001",
       "name": "Parse Scores"
     },
     {
       "parameters": {
-        "jsCode": "// Filter to score >= 4, sort desc, take top 5.\nconst scored = $input.first().json.scored || [];\n\nconst qualified = scored\n  .filter(function(p) { return p.score >= 4; })\n  .sort(function(a, b) { return b.score - a.score; })\n  .slice(0, 5);\n\nreturn [{ json: { topLeads: qualified } }];"
+        "jsCode": "// Filter to score >= 4, sort desc, take top 5.\nconst scored = $input.first().json.scored || [];\n\nconst topLeads = scored\n  .filter(function(p) { return p.score >= 4; })\n  .sort(function(a, b) { return b.score - a.score; })\n  .slice(0, 5);\n\nreturn [{ json: { topLeads } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-480, 100],
+      "position": [120, 0],
       "id": "filter-sort-top5-001",
       "name": "Filter ≥4 + Top 5"
     },
     {
       "parameters": {
+        "jsCode": "// Build the Postgres upsert SQL from topLeads.\n// Doing this in a Code node avoids template-expression-in-SQL weirdness.\nconst topLeads = $input.first().json.topLeads || [];\n\nif (topLeads.length === 0) {\n  // Pass through with empty sql so Postgres node is a no-op\n  return [{ json: { sql: 'SELECT 1', topLeads } }];\n}\n\n// Escape single quotes for SQL safety\nfunction esc(v) {\n  return String(v || '').replace(/'/g, \"''\");\n}\n\nconst rows = topLeads.map(function(l) {\n  return (\n    `('${esc(l.domain)}', '${esc(l.company)}', '${esc(l.url)}',` +\n    ` '${esc(l.icpCategory)}', ${parseInt(l.score, 10) || 0},` +\n    ` '${esc(JSON.stringify(l.signals || []))}'::jsonb,` +\n    ` 'new', 'daily-hunter')`\n  );\n});\n\nconst sql = [\n  'INSERT INTO leads (domain, company, url, icp_bucket, score, signals, status, source)',\n  'VALUES',\n  rows.join(',\\n'),\n  'ON CONFLICT (domain) DO UPDATE SET',\n  '  score        = EXCLUDED.score,',\n  '  icp_bucket   = EXCLUDED.icp_bucket,',\n  '  signals      = EXCLUDED.signals,',\n  '  last_touched = now()',\n  \"WHERE leads.status = 'new'\"\n].join('\\n');\n\nreturn [{ json: { sql, topLeads } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [360, 0],
+      "id": "prepare-upsert-sql-001",
+      "name": "Prepare Upsert SQL"
+    },
+    {
+      "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO leads (domain, company, url, icp_bucket, score, signals, status, source)\nSELECT\n  p.domain,\n  p.company,\n  p.url,\n  p.icp_bucket,\n  p.score,\n  p.signals::jsonb,\n  'new',\n  'daily-hunter'\nFROM json_to_recordset('{{ JSON.stringify($json.topLeads.map(function(l) { return { domain: l.domain, company: l.company, url: l.url, icp_bucket: l.icpCategory, score: l.score, signals: JSON.stringify(l.signals) }; })) }}'::json)\n  AS p(domain text, company text, url text, icp_bucket text, score int, signals text)\nON CONFLICT (domain)\nDO UPDATE SET\n  score        = EXCLUDED.score,\n  icp_bucket   = EXCLUDED.icp_bucket,\n  signals      = EXCLUDED.signals,\n  last_touched = now()\nWHERE leads.status = 'new'",
+        "query": "={{ $json.sql }}",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-240, 100],
+      "position": [600, 0],
       "id": "upsert-leads-001",
       "name": "Upsert to Postgres",
       "credentials": {
@@ -211,11 +221,11 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format the Slack message for the top leads.\n// topLeads is carried forward from Filter ≥4 + Top 5 via $('Filter ≥4 + Top 5').item.json.topLeads\nconst topLeads = $('Filter ≥4 + Top 5').item.json.topLeads || [];\n\nif (topLeads.length === 0) {\n  return [{ json: {\n    slackText: \"🕵️ *Bugsy's Morning Sweep — No new leads clocked in today, boss.* Searches ran clean but nothin' hit the bar. I'll be back at it tomorrow.\"\n  }}];\n}\n\nconst lines = topLeads.map(function(lead) {\n  const signalStr = (lead.signals || []).slice(0, 3).join(' · ');\n  return [\n    `🔥 *[Score: ${lead.score}/10]* ${lead.company} — ${lead.url}`,\n    `ICP: ${lead.icpCategory} (${lead.reason})`,\n    `📌 Signals: ${signalStr}`,\n    `→ /research ${lead.url} to go deep`\n  ].join('\\n');\n});\n\nconst header = `*🗂 Bugsy's Morning Sweep — ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}*\\nListen up, boss — I ran the boards this mornin' and here's what I found. Top ${topLeads.length} prospects worth a look:`;;\n\nreturn [{ json: { slackText: [header, '', ...lines].join('\\n\\n') } }];"
+        "jsCode": "// topLeads carried forward from Prepare Upsert SQL — Postgres output replaces\n// $json, so we pull from the named node upstream.\nconst topLeads = $('Prepare Upsert SQL').item.json.topLeads || [];\n\nif (topLeads.length === 0) {\n  return [{ json: {\n    slackText: \"\u{1f575}️ *Bugsy's Morning Sweep — nothin' clocked in today, boss.* Searches ran clean but nothin' hit the bar. I'll be back at it tomorrow mornin'.\"\n  }}];\n}\n\nconst lines = topLeads.map(function(lead) {\n  const signalStr = (lead.signals || []).slice(0, 3).join(' · ');\n  return [\n    `🔥 *[Score: ${lead.score}/10]* ${lead.company} — ${lead.url}`,\n    `ICP: ${lead.icpCategory} — ${lead.reason}`,\n    `📌 Signals: ${signalStr}`,\n    `→ /research ${lead.url} to go deep`\n  ].join('\\n');\n});\n\nconst date = new Date().toLocaleDateString('en-US', {\n  weekday: 'long', month: 'short', day: 'numeric'\n});\nconst header = `*🗂 Bugsy's Morning Sweep — ${date}*\\nListen up, boss. I ran the boards this mornin' and here's what I clocked. Top ${topLeads.length} prospects worth your attention:`;\n\nreturn [{ json: { slackText: [header, '', ...lines].join('\\n\\n') } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [0, 100],
+      "position": [840, 0],
       "id": "format-slack-001",
       "name": "Format Slack Message"
     },
@@ -232,10 +242,10 @@
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
-      "position": [240, 100],
-      "id": "send-leads-dm-001",
-      "name": "Send DM to Boss",
-      "webhookId": "bugsy-leads-dm-001",
+      "position": [1080, 0],
+      "id": "send-leads-slack-001",
+      "name": "Send to Mulberry Street",
+      "webhookId": "bugsy-leads-slack-001",
       "credentials": {
         "slackApi": {
           "id": "TIP9AbQBq7X5Qidd",
@@ -248,43 +258,63 @@
   "connections": {
     "Schedule Trigger": {
       "main": [
-        [
-          {"node": "SearXNG Query 1 — High-Comp Eng Hire", "type": "main", "index": 0},
-          {"node": "SearXNG Query 2 — Recent Raise", "type": "main", "index": 0},
-          {"node": "SearXNG Query 3 — Explicit Problem Signal", "type": "main", "index": 0},
-          {"node": "SearXNG Query 4 — Premature ML Hire", "type": "main", "index": 0}
-        ]
+        [{"node": "SearXNG Query 1 — High-Comp Eng Hire", "type": "main", "index": 0}]
       ]
     },
     "SearXNG Query 1 — High-Comp Eng Hire": {
-      "main": [[{"node": "Merge + Deduplicate", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "SearXNG Query 2 — Recent Raise", "type": "main", "index": 0}]
+      ]
     },
     "SearXNG Query 2 — Recent Raise": {
-      "main": [[{"node": "Merge + Deduplicate", "type": "main", "index": 1}]]
+      "main": [
+        [{"node": "SearXNG Query 3 — Explicit Problem Signal", "type": "main", "index": 0}]
+      ]
     },
     "SearXNG Query 3 — Explicit Problem Signal": {
-      "main": [[{"node": "Merge + Deduplicate", "type": "main", "index": 2}]]
+      "main": [
+        [{"node": "SearXNG Query 4 — Premature ML Hire", "type": "main", "index": 0}]
+      ]
     },
     "SearXNG Query 4 — Premature ML Hire": {
-      "main": [[{"node": "Merge + Deduplicate", "type": "main", "index": 3}]]
+      "main": [
+        [{"node": "Merge + Deduplicate", "type": "main", "index": 0}]
+      ]
     },
     "Merge + Deduplicate": {
-      "main": [[{"node": "Score Prospects", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Score Prospects", "type": "main", "index": 0}]
+      ]
     },
     "Score Prospects": {
-      "main": [[{"node": "Parse Scores", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Parse Scores", "type": "main", "index": 0}]
+      ]
     },
     "Parse Scores": {
-      "main": [[{"node": "Filter ≥4 + Top 5", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Filter ≥4 + Top 5", "type": "main", "index": 0}]
+      ]
     },
     "Filter ≥4 + Top 5": {
-      "main": [[{"node": "Upsert to Postgres", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Prepare Upsert SQL", "type": "main", "index": 0}]
+      ]
+    },
+    "Prepare Upsert SQL": {
+      "main": [
+        [{"node": "Upsert to Postgres", "type": "main", "index": 0}]
+      ]
     },
     "Upsert to Postgres": {
-      "main": [[{"node": "Format Slack Message", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Format Slack Message", "type": "main", "index": 0}]
+      ]
     },
     "Format Slack Message": {
-      "main": [[{"node": "Send DM to Boss", "type": "main", "index": 0}]]
+      "main": [
+        [{"node": "Send to Mulberry Street", "type": "main", "index": 0}]
+      ]
     }
   },
   "active": false,
