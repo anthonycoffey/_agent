@@ -285,7 +285,7 @@
           "conditions": [
             {
               "id": "score-threshold",
-              "leftValue": "={{ $json.icpScore }}",
+              "leftValue": "={{ $('Parse Brief').item.json.icpScore }}",
               "rightValue": 4,
               "operator": {
                 "type": "number",
@@ -294,7 +294,7 @@
             },
             {
               "id": "has-draft",
-              "leftValue": "={{ $json.draftEmail }}",
+              "leftValue": "={{ $('Parse Brief').item.json.draftEmail }}",
               "rightValue": "",
               "operator": {
                 "type": "object",
@@ -316,10 +316,10 @@
     {
       "parameters": {
         "resource": "draft",
-        "subject": "={{ $json.draftEmail.subject }}",
-        "message": "={{ $json.draftEmail.body }}",
+        "subject": "={{ $('Parse Brief').item.json.draftEmail.subject }}",
+        "message": "={{ $('Parse Brief').item.json.draftEmail.body }}",
         "options": {
-          "sendTo": "={{ $json.draftEmail.recipientGuess }}"
+          "sendTo": "={{ $('Parse Brief').item.json.draftEmail.recipientGuess }}"
         }
       },
       "type": "n8n-nodes-base.gmail",
