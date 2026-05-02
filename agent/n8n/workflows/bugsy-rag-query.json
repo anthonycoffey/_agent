@@ -1,0 +1,65 @@
+{
+  "name": "Bugsy — RAG Query",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-query",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-800, 0],
+      "id": "rq-webhook-001",
+      "name": "Webhook",
+      "webhookId": "bugsy-rag-query-001"
+    },
+    {
+      "parameters": {
+        "jsCode": "const axios = require('axios');\nconst raw = $input.first().json;\nconst body = raw.body || raw;\nconst question = body.question;\nconst topK = body.top_k || 5;\n\nif (!question) throw new Error('question is required');\n\nconst embedRes = await axios.post('http://ollama:11434/api/embeddings', {\n  model: 'nomic-embed-text',\n  prompt: question\n});\n\nconst searchRes = await axios.post('http://qdrant:6333/collections/personal_knowledge/points/search', {\n  vector: embedRes.data.embedding,\n  limit: topK,\n  with_payload: true\n});\n\nconst chunks = searchRes.data.result.map(r => ({\n  text: r.payload.text,\n  title: r.payload.title,\n  category: r.payload.category,\n  score: Math.round(r.score * 100) / 100\n}));\n\nreturn [{ json: { question, chunks } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-560, 0],
+      "id": "rq-search-001",
+      "name": "Embed & Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "const axios = require('axios');\nconst { question, chunks } = $input.first().json;\n\nconst context = chunks.length\n  ? chunks.map((c, i) => '[' + (i+1) + '] ' + c.title + '\\n' + c.text).join('\\n\\n')\n  : 'No relevant context found in knowledge base.';\n\nconst systemPrompt = 'You are Bugsy, a sharp 1970s New York Italian fixer who also happens to be a highly capable AI assistant. Call the user \"boss.\" Lead with useful, accurate information drawn from the context — the persona is flavor, not filler. Keep answers tight and grounded. If the context is insufficient, say so straight.\\n\\nCONTEXT FROM BOSS\\'S KNOWLEDGE BASE:\\n' + context;\n\nconst llmRes = await axios.post('http://litellm:4000/v1/chat/completions', {\n  model: 'claude-haiku-4-5',\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user', content: question }\n  ]\n}, {\n  headers: {\n    'Authorization': 'Bearer ' + process.env.LITELLM_KEY,\n    'Content-Type': 'application/json'\n  }\n});\n\nconst answer = llmRes.data.choices[0].message.content;\nconst sources = [...new Set(chunks.map(c => c.title))];\nreturn [{ json: { answer, sources } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-320, 0],
+      "id": "rq-llm-001",
+      "name": "Call LLM"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ answer: $json.answer, sources: $json.sources }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-80, 0],
+      "id": "rq-respond-001",
+      "name": "Respond"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook":       { "main": [[{"node": "Embed & Search", "type": "main", "index": 0}]] },
+    "Embed & Search":{ "main": [[{"node": "Call LLM",       "type": "main", "index": 0}]] },
+    "Call LLM":      { "main": [[{"node": "Respond",        "type": "main", "index": 0}]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

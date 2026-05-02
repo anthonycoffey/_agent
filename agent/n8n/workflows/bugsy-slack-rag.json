@@ -1,0 +1,87 @@
+{
+  "name": "Bugsy — Slack RAG",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-bugsy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1000, 0],
+      "id": "sr-webhook-001",
+      "name": "Webhook",
+      "webhookId": "bugsy-slack-rag-001"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\nconst question = (body.text || '').trim();\nconst responseUrl = body.response_url || '';\nconst userName = body.user_name || 'boss';\nreturn [{ json: { question, responseUrl, userName, empty: !question } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-760, 0],
+      "id": "sr-parse-001",
+      "name": "Parse Command"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{\n  $('Parse Command').first().json.empty\n    ? 'What\\'s the question, boss? Try: /bugsy what are my strongest skills?'\n    : 'On it, boss...'\n}}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-520, 0],
+      "id": "sr-ack-001",
+      "name": "ACK to Slack"
+    },
+    {
+      "parameters": {
+        "jsCode": "const axios = require('axios');\nconst { question, responseUrl } = $('Parse Command').first().json;\n\nif (!question) return [];\n\nconst embedRes = await axios.post('http://ollama:11434/api/embeddings', {\n  model: 'nomic-embed-text',\n  prompt: question\n});\n\nconst searchRes = await axios.post('http://qdrant:6333/collections/personal_knowledge/points/search', {\n  vector: embedRes.data.embedding,\n  limit: 5,\n  with_payload: true\n});\n\nconst chunks = searchRes.data.result.map(r => ({\n  text: r.payload.text,\n  title: r.payload.title,\n  category: r.payload.category,\n  score: Math.round(r.score * 100) / 100\n}));\n\nreturn [{ json: { question, responseUrl, chunks } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-280, 0],
+      "id": "sr-search-001",
+      "name": "Embed & Search"
+    },
+    {
+      "parameters": {
+        "jsCode": "const axios = require('axios');\nconst { question, responseUrl, chunks } = $input.first().json;\n\nconst context = chunks.length\n  ? chunks.map((c, i) => '[' + (i+1) + '] ' + c.title + '\\n' + c.text).join('\\n\\n')\n  : 'No relevant context found in knowledge base.';\n\nconst systemPrompt = 'You are Bugsy, a sharp 1970s New York Italian fixer who also happens to be a highly capable AI assistant. Call the user \"boss.\" Lead with useful, accurate information drawn from the context — the persona is flavor, not filler. Keep answers tight and grounded. Slack formatting only — no markdown headers, use *bold* and _italic_ if needed. If the context is insufficient, say so straight.\\n\\nCONTEXT FROM BOSS\\'S KNOWLEDGE BASE:\\n' + context;\n\nconst llmRes = await axios.post('http://litellm:4000/v1/chat/completions', {\n  model: 'claude-haiku-4-5',\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user', content: question }\n  ]\n}, {\n  headers: {\n    'Authorization': 'Bearer ' + process.env.LITELLM_KEY,\n    'Content-Type': 'application/json'\n  }\n});\n\nconst answer = llmRes.data.choices[0].message.content;\nconst sources = [...new Set(chunks.map(c => c.title))];\nreturn [{ json: { answer, sources, responseUrl } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-40, 0],
+      "id": "sr-llm-001",
+      "name": "Call LLM"
+    },
+    {
+      "parameters": {
+        "jsCode": "const axios = require('axios');\nconst { answer, sources, responseUrl } = $input.first().json;\n\nif (!responseUrl) return [{ json: { ok: false } }];\n\nconst footer = sources && sources.length ? '\\n\\n_Sources: ' + sources.join(', ') + '_' : '';\n\nawait axios.post(responseUrl, {\n  response_type: 'in_channel',\n  text: answer + footer\n});\n\nreturn [{ json: { ok: true } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [200, 0],
+      "id": "sr-post-001",
+      "name": "Post to Slack"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook":       { "main": [[{"node": "Parse Command",  "type": "main", "index": 0}]] },
+    "Parse Command": { "main": [[{"node": "ACK to Slack",   "type": "main", "index": 0}]] },
+    "ACK to Slack":  { "main": [[{"node": "Embed & Search", "type": "main", "index": 0}]] },
+    "Embed & Search":{ "main": [[{"node": "Call LLM",       "type": "main", "index": 0}]] },
+    "Call LLM":      { "main": [[{"node": "Post to Slack",  "type": "main", "index": 0}]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
