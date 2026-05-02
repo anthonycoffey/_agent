@@ -30,3 +30,6 @@ Thumbs.db
 
 # Claude Code per-workspace settings
 .claude/
+
+# RAG content — personal documents, never commit
+agent/rag/**/*.md
