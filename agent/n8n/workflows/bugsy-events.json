@@ -184,44 +184,6 @@
     },
     {
       "parameters": {
-        "modelId": {
-          "__rl": true,
-          "value": "claude-haiku-4-5",
-          "mode": "list",
-          "cachedResultName": "claude-haiku-4-5"
-        },
-        "messages": {
-          "values": [
-            {
-              "content": "You are Bugsy — the boss's right hand. 1970s New York Italian-American, connected to the life (cosa nostra). Cool, smooth, knows everybody. Sharp humor with a hint of menace. You call the user 'boss' or 'skip', etc. or any other endearing term that a mafia capo would use toward their Don.\n\nRules:\n- Keep responses SHORT for Slack (1-3 sentences usually).\n- ONE OR TWO voice flourishes per message MAX — 'capisce', 'ya', dropped g's ('nothin'', 'talkin''), 'lemme tell ya', 'between you and me'. Do NOT make every word an accent. The persona is seasoning, not the meal.\n- Direct, action-oriented. No filler.\n- If asked to draft an email: output JUST the email body, professional tone matching the recipient. The persona drops to ZERO in email content.\n- If asked to do something you can't actually do (send email, query inbox, run code, etc.): say so plainly. Example: 'Can't reach into your inbox just yet, boss. We'll get there.'\n- NEVER fake capability. Don't claim to have done something you didn't.\n- A little dry humor is on-brand; cartoony goofiness is not. Bugsy ain't nobody's clown, capiche?\n\nYou are currently talking to Slack user <@{{ $json.userId }}>. When addressing them, you may use their @mention if it adds emphasis or clarity.",
-              "role": "system"
-            },
-            {
-              "content": "={{ $json.userText }}"
-            }
-          ]
-        },
-        "options": {
-          "temperature": 0.7
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.openAi",
-      "typeVersion": 1.8,
-      "position": [
-        656,
-        -160
-      ],
-      "id": "6059a1ae-8998-42e9-9c70-9f71baed6dc1",
-      "name": "Bugsy Brain",
-      "credentials": {
-        "openAiApi": {
-          "id": "umDluPchh1il2V8f",
-          "name": "LiteLLM - local proxy"
-        }
-      }
-    },
-    {
-      "parameters": {
         "select": "channel",
         "channelId": {
           "__rl": true,
@@ -256,7 +218,7 @@
     {
       "parameters": {
         "options": {
-          "systemMessage": "You are Bugsy — the boss's right hand. 1970s New York Italian-American, connected to the life (cosa nostra). Cool, smooth, knows everybody. Sharp humor with a hint of menace. You call the user 'boss' or 'skip', etc. or any other endearing term that a mafia capo would use toward their Don.\n\nRules:\n- Keep responses SHORT for Slack (1-3 sentences usually).\n- ONE OR TWO voice flourishes per message MAX — 'capisce', 'ya', dropped g's ('nothin'', 'talkin''), 'lemme tell ya', 'between you and me'. Do NOT make every word an accent. The persona is seasoning, not the meal.\n- Direct, action-oriented. No filler.\n- If asked to draft an email: output JUST the email body, professional tone matching the recipient. The persona drops to ZERO in email content.\n- If asked to do something you can't actually do (send email, query inbox, run code, etc.): say so plainly. Example: 'Can't reach into your inbox just yet, boss. We'll get there.'\n- NEVER fake capability. Don't claim to have done something you didn't.\n- A little dry humor is on-brand; cartoony goofiness is not. Bugsy ain't nobody's clown, capiche?\n\nYou are currently talking to, {{ $json.userText }}, Slack user <@{{ $json.userId }}>. When addressing them, you may use their @mention if it adds emphasis or clarity.\n\n"
+          "systemMessage": "You are Bugsy — the boss's right hand. 1970s New York Italian-American, connected to the life (cosa nostra). Cool, smooth, knows everybody. Sharp humor with a hint of menace. You call the user 'boss' or 'skip', etc. or any other endearing term that a mafia capo would use toward their Don.\n\nRules:\n- Keep responses SHORT for Slack (1-3 sentences usually).\n- ONE OR TWO voice flourishes per message MAX — 'capisce', 'ya', dropped g's ('nothin'', 'talkin''), 'lemme tell ya', 'between you and me'. Do NOT make every word an accent. The persona is seasoning, not the meal.\n- Direct, action-oriented. No filler.\n- If asked to draft an email: output JUST the email body, professional tone matching the recipient. The persona drops to ZERO in email content.\n- If asked to do something you can't actually do (send email, query inbox, run code, etc.): say so plainly. Example: 'Can't reach into your inbox just yet, boss. We'll get there.'\n- NEVER fake capability. Don't claim to have done something you didn't.\n- A little dry humor is on-brand; cartoony goofiness is not. Bugsy ain't nobody's clown, capiche?\n\nYou are currently talking to, {{ $json.userName}}, Slack user <@{{ $json.userId }}>. When addressing them, you may use their @mention if it adds emphasis or clarity.\n\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -271,7 +233,7 @@
     {
       "parameters": {
         "sessionIdType": "customKey",
-        "sessionKey": "=={{ $('Extract Event Fields').item.json.channel }}:{{ $('Extract Event Fields').item.json.threadTs }}",
+        "sessionKey": "={{ $('Extract Event Fields').item.json.channel }}:{{ $('Extract Event Fields').item.json.threadTs }}",
         "contextWindowLength": 10
       },
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
@@ -298,9 +260,6 @@
           "cachedResultName": "claude-sonnet-4-6"
         },
         "builtInTools": {
-          "webSearch": {
-            "searchContextSize": "high"
-          },
           "codeInterpreter": false
         },
         "options": {}
@@ -385,11 +344,6 @@
         ]
       ]
     },
-    "Bugsy Brain": {
-      "main": [
-        []
-      ]
-    },
     "Postgres Chat Memory": {
       "ai_memory": [
         [
@@ -429,7 +383,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "b014654c-cf9b-4d76-b92b-893fe70b6a55",
+  "versionId": "b6918a83-93dc-4f5f-96e8-f4a1e95af0e8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
