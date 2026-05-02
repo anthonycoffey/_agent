@@ -229,7 +229,13 @@
           "mode": "id"
         },
         "text": "={{ $json.message.content }}",
-        "otherOptions": {}
+        "otherOptions": {
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Extract Event Fields').item.json.threadTs }}"
+            }
+          }
+        }
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
@@ -329,7 +335,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "6a64cda3-a299-4e6a-b8ef-295c55a1eede",
+  "versionId": "1bec865b-cb44-4791-9dce-a32d22edbf42",
   "meta": {
     "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
   },
