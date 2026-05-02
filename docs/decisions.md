@@ -6,6 +6,7 @@ alone — tech picks, tradeoffs taken, paths explicitly *not* taken.
 
 | Date         | Decision                          | Why                                                                                          |
 | ------------ | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| May 2, 2026 | Self-hosted Evolution API (Baileys) for Bugsy on WhatsApp, not Twilio / Meta Cloud API | FOSS-first; no per-message billing, no Business number / template approval / 24h reply window. Tradeoff accepted: unofficial WhatsApp Web protocol carries small ban risk on the paired number — mitigated by using a burner number, not personal. |
 | May 1, 2026 | Enable axios in n8n Code node sandbox via `NODE_FUNCTION_ALLOW_EXTERNAL=axios` | Neither `$helpers.httpRequest` nor `fetch` are available in the n8n Code node sandbox; axios is the cleanest escape hatch and is scoped to a named module (safer than `*`). |
 | April 25, 2026 | Hoist runtime files from `tf/files/` to top-level `agent/` | So VM `~/agent` can mirror the repo layout via git clone + symlink; honest separation of infra vs app. |
 | April 25, 2026 | Cloudflare Tunnel for public ingress (not Caddy) | Honors "no public IP" principle. Outbound-only tunnel keeps VM unreachable from internet; CF terminates TLS + WAF + optional Access SSO. |

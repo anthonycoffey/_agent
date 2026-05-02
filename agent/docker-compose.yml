@@ -18,6 +18,7 @@ volumes:
   openwebui-data:
   n8n-data:
   searxng-data:
+  evolution-data:
 
 services:
   # ---------- Data layer ----------
@@ -150,8 +151,55 @@ services:
       GENERIC_TIMEZONE: ${TZ}
       N8N_RUNNERS_ENABLED: "true"
       NODE_FUNCTION_ALLOW_EXTERNAL: axios
+      EVOLUTION_API_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
     volumes:
       - n8n-data:/home/node/.n8n
+    networks: [agent-net]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ---------- WhatsApp gateway ----------
+  #
+  # Evolution API — self-hosted WhatsApp gateway (wraps Baileys / WhatsApp Web).
+  # Internal-only by default; n8n calls it at http://evolution-api:8080.
+  # Expose externally via Cloudflare Tunnel only when you need to scan a QR
+  # or manage instances from the browser. Persists session state in postgres
+  # (database `evolution`) and uses redis db 6 as a cache.
+
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    container_name: agent-evolution-api
+    restart: unless-stopped
+    environment:
+      SERVER_TYPE: http
+      SERVER_PORT: 8080
+      SERVER_URL: https://${EVOLUTION_HOST}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: "true"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evolution
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_exchange
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/6
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_REDIS_SAVE_INSTANCES: "true"
+      CACHE_LOCAL_ENABLED: "false"
+      CONFIG_SESSION_PHONE_CLIENT: Bugsy
+      CONFIG_SESSION_PHONE_NAME: Chrome
+      QRCODE_LIMIT: 30
+      LANGUAGE: en
+      DEL_INSTANCE: "false"
+      TELEMETRY: "false"
+    volumes:
+      - evolution-data:/evolution/instances
     networks: [agent-net]
     depends_on:
       postgres:
@@ -165,7 +213,7 @@ services:
     restart: unless-stopped
     command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN}"]
     networks: [agent-net]
-    depends_on: [n8n]
+    depends_on: [n8n, evolution-api]
 
   # ---------- Search layer ----------
   #
