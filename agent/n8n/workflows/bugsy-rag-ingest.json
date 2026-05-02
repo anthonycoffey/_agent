@@ -10,49 +10,88 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-600, 0],
+      "position": [-900, 0],
       "id": "rag-webhook-001",
       "name": "Webhook",
       "webhookId": "bugsy-rag-ingest-001"
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;  // n8n sometimes wraps POST body under .body\nconst { category, content } = body;\n\nlet text = content;\nlet title = 'Untitled';\nlet tags = [];\n\n// Strip YAML frontmatter and extract title + tags\nconst fmMatch = content.match(/^---\\n([\\s\\S]*?)\\n---\\n([\\s\\S]*)$/);\nif (fmMatch) {\n  const fm = fmMatch[1];\n  text = fmMatch[2].trim();\n  const titleMatch = fm.match(/^title:\\s*(.+)$/m);\n  if (titleMatch) title = titleMatch[1].replace(/['\"]/g, '').trim();\n  const tagsMatch = fm.match(/^tags:\\s*\\[([^\\]]*)\\]/m);\n  if (tagsMatch) tags = tagsMatch[1].split(',').map(t => t.trim().replace(/['\"]/g, ''));\n}\n\n// Chunk with overlap so context isn't lost at boundaries\nconst CHUNK_SIZE = 400;\nconst OVERLAP = 50;\nconst chunks = [];\nlet i = 0;\nwhile (i < text.length) {\n  chunks.push(text.slice(i, i + CHUNK_SIZE));\n  if (i + CHUNK_SIZE >= text.length) break;\n  i += CHUNK_SIZE - OVERLAP;\n}\n\nreturn [{ json: { title, category, tags, chunks, total: chunks.length } }];"
+        "jsCode": "const raw = $input.first().json;\nconst body = raw.body || raw;\nconst { category, content } = body;\n\nlet text = content;\nlet title = 'Untitled';\nlet tags = [];\n\nconst fmMatch = content.match(/^---\\n([\\s\\S]*?)\\n---\\n([\\s\\S]*)$/);\nif (fmMatch) {\n  const fm = fmMatch[1];\n  text = fmMatch[2].trim();\n  const titleMatch = fm.match(/^title:\\s*(.+)$/m);\n  if (titleMatch) title = titleMatch[1].replace(/['\"]/g, '').trim();\n  const tagsMatch = fm.match(/^tags:\\s*\\[([^\\]]*)\\]/m);\n  if (tagsMatch) tags = tagsMatch[1].split(',').map(t => t.trim().replace(/['\"]/g, ''));\n}\n\nconst CHUNK_SIZE = 400;\nconst OVERLAP = 50;\nconst chunks = [];\nlet i = 0;\nwhile (i < text.length) {\n  chunks.push(text.slice(i, i + CHUNK_SIZE));\n  if (i + CHUNK_SIZE >= text.length) break;\n  i += CHUNK_SIZE - OVERLAP;\n}\n\nreturn chunks.map((chunk, idx) => ({\n  json: {\n    text: chunk,\n    title,\n    category,\n    tags,\n    chunk_index: idx,\n    total_chunks: chunks.length\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-360, 0],
+      "position": [-680, 0],
       "id": "rag-parse-001",
       "name": "Parse & Chunk"
     },
     {
       "parameters": {
-        "jsCode": "let axios;\ntry { axios = require('axios'); } catch (e) {\n  return [{ json: { ok: false, error: 'require(axios) failed: ' + (e && e.message), debug: { stage: 'require-axios' } } }];\n}\nconst { title, category, tags, chunks } = $input.first().json;\n\nfunction uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {\n    const r = Math.random() * 16 | 0;\n    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);\n  });\n}\n\nconst debug = { stage: 'init', title, total_chunks: chunks ? chunks.length : 0 };\n\ntry {\n  debug.stage = 'ensure-collection';\n  try {\n    await axios.put('http://qdrant:6333/collections/personal_knowledge', {\n      vectors: { size: 768, distance: 'Cosine' }\n    });\n  } catch(e) { /* already exists, that's fine */ }\n\n  const points = [];\n  for (let i = 0; i < chunks.length; i++) {\n    debug.stage = `embed-chunk-${i}`;\n    debug.chunk_len = chunks[i].length;\n    const embedRes = await axios.post('http://ollama:11434/api/embeddings', {\n      model: 'nomic-embed-text',\n      prompt: chunks[i]\n    }, { timeout: 30000 });\n    if (!embedRes.data || !Array.isArray(embedRes.data.embedding)) {\n      throw new Error(`bad embedding response at chunk ${i}: ${JSON.stringify(embedRes.data).slice(0, 200)}`);\n    }\n    points.push({\n      id: uuid(),\n      vector: embedRes.data.embedding,\n      payload: {\n        text: chunks[i],\n        title,\n        category,\n        tags,\n        chunk_index: i,\n        total_chunks: chunks.length,\n        ingested_at: new Date().toISOString()\n      }\n    });\n  }\n\n  debug.stage = 'upsert';\n  debug.points = points.length;\n  const upsertRes = await axios.put('http://qdrant:6333/collections/personal_knowledge/points', { points }, { timeout: 30000 });\n  debug.qdrant_status = upsertRes.data && upsertRes.data.status;\n\n  return [{ json: { ok: true, title, chunks_stored: points.length, debug } }];\n} catch (err) {\n  return [{ json: { ok: false, title, error: String(err && err.message || err), qdrant_response: err && err.response && err.response.data, debug } }];\n}"
+        "method": "POST",
+        "url": "http://ollama:11434/api/embeddings",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "model", "value": "nomic-embed-text" },
+            { "name": "prompt", "value": "={{ $json.text }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-460, 0],
+      "id": "rag-embed-001",
+      "name": "Embed (Ollama)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const embeds = $input.all();\nconst sources = $('Parse & Chunk').all();\n\nfunction uuid() {\n  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {\n    const r = Math.random() * 16 | 0;\n    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);\n  });\n}\n\nconst now = new Date().toISOString();\nconst points = embeds.map((e, i) => {\n  const meta = sources[i].json;\n  return {\n    id: uuid(),\n    vector: e.json.embedding,\n    payload: {\n      text: meta.text,\n      title: meta.title,\n      category: meta.category,\n      tags: meta.tags,\n      chunk_index: meta.chunk_index,\n      total_chunks: meta.total_chunks,\n      ingested_at: now\n    }\n  };\n});\n\nreturn [{ json: { points, count: points.length, title: sources[0].json.title } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-120, 0],
-      "id": "rag-embed-001",
-      "name": "Embed & Upsert"
+      "position": [-240, 0],
+      "id": "rag-build-001",
+      "name": "Build Points"
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "http://qdrant:6333/collections/personal_knowledge/points",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ points: $json.points }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-20, 0],
+      "id": "rag-upsert-001",
+      "name": "Upsert (Qdrant)"
     },
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "={{ $json.ok ? '✓ ' + $json.chunks_stored + ' chunks stored — ' + $json.title : '✗ ' + ($json.error || 'unknown') + ' | stage=' + ($json.debug && $json.debug.stage) + ' | qdrant=' + JSON.stringify($json.qdrant_response) }}",
+        "responseBody": "={{ '✓ ' + $('Build Points').first().json.count + ' chunks stored — ' + $('Build Points').first().json.title + ' (qdrant: ' + $json.status + ')' }}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [120, 0],
+      "position": [200, 0],
       "id": "rag-respond-001",
       "name": "Respond"
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook":       { "main": [[{"node": "Parse & Chunk",  "type": "main", "index": 0}]] },
-    "Parse & Chunk": { "main": [[{"node": "Embed & Upsert", "type": "main", "index": 0}]] },
-    "Embed & Upsert":{ "main": [[{"node": "Respond",        "type": "main", "index": 0}]] }
+    "Webhook":         { "main": [[{ "node": "Parse & Chunk",   "type": "main", "index": 0 }]] },
+    "Parse & Chunk":   { "main": [[{ "node": "Embed (Ollama)",  "type": "main", "index": 0 }]] },
+    "Embed (Ollama)":  { "main": [[{ "node": "Build Points",    "type": "main", "index": 0 }]] },
+    "Build Points":    { "main": [[{ "node": "Upsert (Qdrant)", "type": "main", "index": 0 }]] },
+    "Upsert (Qdrant)": { "main": [[{ "node": "Respond",         "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }
