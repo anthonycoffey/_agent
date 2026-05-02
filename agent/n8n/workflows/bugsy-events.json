@@ -141,7 +141,7 @@
           "assignments": [
             {
               "id": "user-text-001",
-              "name": "userText",
+              "name": "chatInput",
               "value": "={{ $json.body.event.text.replace(/<@[A-Z0-9]+>\\s*/g, '').trim() }}",
               "type": "string"
             },
@@ -208,8 +208,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        672,
-        240
+        656,
+        -160
       ],
       "id": "6059a1ae-8998-42e9-9c70-9f71baed6dc1",
       "name": "Bugsy Brain",
@@ -228,7 +228,7 @@
           "value": "={{ $('Extract Event Fields').item.json.channel }}",
           "mode": "id"
         },
-        "text": "={{ $json.message.content }}",
+        "text": "={{ $json.output }}",
         "otherOptions": {
           "thread_ts": {
             "replyValues": {
@@ -250,6 +250,73 @@
         "slackApi": {
           "id": "TIP9AbQBq7X5Qidd",
           "name": "Slack - Bugsy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are Bugsy — the boss's right hand. 1970s New York Italian-American, connected to the life (cosa nostra). Cool, smooth, knows everybody. Sharp humor with a hint of menace. You call the user 'boss' or 'skip', etc. or any other endearing term that a mafia capo would use toward their Don.\n\nRules:\n- Keep responses SHORT for Slack (1-3 sentences usually).\n- ONE OR TWO voice flourishes per message MAX — 'capisce', 'ya', dropped g's ('nothin'', 'talkin''), 'lemme tell ya', 'between you and me'. Do NOT make every word an accent. The persona is seasoning, not the meal.\n- Direct, action-oriented. No filler.\n- If asked to draft an email: output JUST the email body, professional tone matching the recipient. The persona drops to ZERO in email content.\n- If asked to do something you can't actually do (send email, query inbox, run code, etc.): say so plainly. Example: 'Can't reach into your inbox just yet, boss. We'll get there.'\n- NEVER fake capability. Don't claim to have done something you didn't.\n- A little dry humor is on-brand; cartoony goofiness is not. Bugsy ain't nobody's clown, capiche?\n\nYou are currently talking to, {{ $json.userText }}, Slack user <@{{ $json.userId }}>. When addressing them, you may use their @mention if it adds emphasis or clarity.\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        720,
+        32
+      ],
+      "id": "5b95ba9e-eaaa-4c83-99b0-e845256dc472",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ $('Extract Event Fields').item.json.channel }}:{{ $('Extract Event Fields').item.json.threadTs }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        848,
+        272
+      ],
+      "id": "a73b26ca-d2d3-44c0-87c4-c409bcfd45b9",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "pH9jQ7ntBiIspcBT",
+          "name": "Postgres - Memory database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-6",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-6"
+        },
+        "builtInTools": {
+          "webSearch": {
+            "searchContextSize": "high"
+          },
+          "codeInterpreter": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        272
+      ],
+      "id": "0da651c4-f711-4dec-9752-20e2813150ad",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "umDluPchh1il2V8f",
+          "name": "LiteLLM - local proxy"
         }
       }
     }
@@ -311,7 +378,7 @@
       "main": [
         [
           {
-            "node": "Bugsy Brain",
+            "node": "AI Agent",
             "type": "main",
             "index": 0
           }
@@ -319,6 +386,33 @@
       ]
     },
     "Bugsy Brain": {
+      "main": [
+        []
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
       "main": [
         [
           {
@@ -335,8 +429,9 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "1bec865b-cb44-4791-9dce-a32d22edbf42",
+  "versionId": "b014654c-cf9b-4d76-b92b-893fe70b6a55",
   "meta": {
+    "templateCredsSetupCompleted": true,
     "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
   },
   "id": "GyQxNEATR6yktRv0",
