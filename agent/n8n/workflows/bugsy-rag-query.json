@@ -10,8 +10,11 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-900, 0],
-      "id": "rq-webhook-001",
+      "position": [
+        -336,
+        784
+      ],
+      "id": "a1c8eb4a-b687-4c01-89ba-776ef84db130",
       "name": "Webhook",
       "webhookId": "bugsy-rag-query-001"
     },
@@ -21,8 +24,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-680, 0],
-      "id": "rq-search-001",
+      "position": [
+        -112,
+        784
+      ],
+      "id": "adaa8040-f797-4514-8fb4-b581eaa6974a",
       "name": "Embed & Search"
     },
     {
@@ -52,8 +58,11 @@
       },
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [-460, 0],
-      "id": "rq-if-001",
+      "position": [
+        112,
+        784
+      ],
+      "id": "51ca3f54-e96c-4941-b098-ad9e48b576a9",
       "name": "Has Error?"
     },
     {
@@ -63,15 +72,21 @@
         "options": {
           "responseHeaders": {
             "entries": [
-              { "name": "Content-Type", "value": "application/json" }
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
             ]
           }
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-220, -160],
-      "id": "rq-respond-err-001",
+      "position": [
+        352,
+        624
+      ],
+      "id": "a90599bd-9d18-4603-bd76-63cc89797bb5",
       "name": "Respond Error"
     },
     {
@@ -80,32 +95,49 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-220, 160],
-      "id": "rq-build-001",
+      "position": [
+        352,
+        944
+      ],
+      "id": "ab307a0e-60dc-43b5-b0d0-d4be652ee8bd",
       "name": "Build LLM Request"
     },
     {
       "parameters": {
         "method": "POST",
         "url": "http://litellm:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "=Bearer {{ $env.WEBUI_SECRET_KEY }}" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
-        "contentType": "json",
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.payload) }}",
-        "options": { "timeout": 60000 }
+        "options": {
+          "timeout": 60000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [0, 160],
-      "id": "rq-llm-001",
-      "name": "Call LLM"
+      "position": [
+        576,
+        944
+      ],
+      "id": "784f7a8d-b2ff-44c1-8822-65c86d8875de",
+      "name": "Call LLM",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "38AL9NfKmBOkT9bx",
+          "name": "LiteLLM Bearer"
+        }
+      }
     },
     {
       "parameters": {
@@ -113,8 +145,11 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [220, 160],
-      "id": "rq-format-001",
+      "position": [
+        800,
+        944
+      ],
+      "id": "969cdd5b-5449-4969-bab2-b88173eba1ee",
       "name": "Format Response"
     },
     {
@@ -124,30 +159,109 @@
         "options": {
           "responseHeaders": {
             "entries": [
-              { "name": "Content-Type", "value": "application/json" }
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
             ]
           }
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [440, 160],
-      "id": "rq-respond-ok-001",
+      "position": [
+        1024,
+        944
+      ],
+      "id": "4a902d75-db97-4c67-8618-9e58655f2851",
       "name": "Respond Success"
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook":          { "main": [[{ "node": "Embed & Search",     "type": "main", "index": 0 }]] },
-    "Embed & Search":   { "main": [[{ "node": "Has Error?",         "type": "main", "index": 0 }]] },
-    "Has Error?":       { "main": [
-      [{ "node": "Respond Error",      "type": "main", "index": 0 }],
-      [{ "node": "Build LLM Request",  "type": "main", "index": 0 }]
-    ] },
-    "Build LLM Request":{ "main": [[{ "node": "Call LLM",           "type": "main", "index": 0 }]] },
-    "Call LLM":         { "main": [[{ "node": "Format Response",    "type": "main", "index": 0 }]] },
-    "Format Response":  { "main": [[{ "node": "Respond Success",    "type": "main", "index": 0 }]] }
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Embed & Search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embed & Search": {
+      "main": [
+        [
+          {
+            "node": "Has Error?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Error?": {
+      "main": [
+        [
+          {
+            "node": "Respond Error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build LLM Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build LLM Request": {
+      "main": [
+        [
+          {
+            "node": "Call LLM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call LLM": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "active": false,
-  "settings": { "executionOrder": "v1" }
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "19d84a7c-dcf5-41c8-b273-9be7a4278bab",
+  "meta": {
+    "instanceId": "9a515ed894704ff5a42952613dd2c4d3e410208f654e808e2b59cb2d12b0684f"
+  },
+  "id": "ZDo4WW7OYK2q3Imv",
+  "tags": []
 }
