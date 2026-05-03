@@ -10,7 +10,7 @@
       },
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
-      "position": [-800, 0],
+      "position": [-900, 0],
       "id": "rq-webhook-001",
       "name": "Webhook",
       "webhookId": "bugsy-rag-query-001"
@@ -21,24 +21,45 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-560, 0],
+      "position": [-680, 0],
       "id": "rq-search-001",
       "name": "Embed & Search"
     },
     {
       "parameters": {
-        "jsCode": "const axios = require('axios');\nconst input = $input.first().json;\nif (input.error) {\n  return [{ json: input }];\n}\nconst { question, chunks } = input;\n\nconst context = chunks.length\n  ? chunks.map((c, i) => '[' + (i+1) + '] ' + c.title + '\\n' + c.text).join('\\n\\n')\n  : 'No relevant context found in knowledge base.';\n\nconst systemPrompt = 'You are Bugsy, a sharp 1970s New York Italian fixer who also happens to be a highly capable AI assistant. Call the user \"boss.\" Lead with useful, accurate information drawn from the context — the persona is flavor, not filler. Keep answers tight and grounded. If the context is insufficient, say so straight.\\n\\nCONTEXT FROM BOSS\\'S KNOWLEDGE BASE:\\n' + context;\n\nconst llmRes = await axios.post('http://litellm:4000/v1/chat/completions', {\n  model: 'claude-haiku-4-5',\n  messages: [\n    { role: 'system', content: systemPrompt },\n    { role: 'user', content: question }\n  ]\n}, {\n  headers: {\n    'Authorization': 'Bearer ' + $env.WEBUI_SECRET_KEY,\n    'Content-Type': 'application/json'\n  }\n});\n\nconst answer = llmRes.data.choices[0].message.content;\nconst sources = [...new Set(chunks.map(c => c.title))];\nreturn [{ json: { answer, sources } }];"
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-error",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
       },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [-320, 0],
-      "id": "rq-llm-001",
-      "name": "Call LLM"
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-460, 0],
+      "id": "rq-if-001",
+      "name": "Has Error?"
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify($json.error ? { error: $json.error } : { answer: $json.answer, sources: $json.sources }) }}",
+        "responseBody": "={{ JSON.stringify({ error: $json.error }) }}",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -49,16 +70,83 @@
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [-80, 0],
-      "id": "rq-respond-001",
-      "name": "Respond"
+      "position": [-220, -160],
+      "id": "rq-respond-err-001",
+      "name": "Respond Error"
+    },
+    {
+      "parameters": {
+        "jsCode": "const { question, chunks } = $input.first().json;\n\nconst context = chunks.length\n  ? chunks.map((c, i) => '[' + (i+1) + '] ' + c.title + '\\n' + c.text).join('\\n\\n')\n  : 'No relevant context found in knowledge base.';\n\nconst systemPrompt = 'You are Bugsy, a sharp 1970s New York Italian fixer who also happens to be a highly capable AI assistant. Call the user \"boss.\" Lead with useful, accurate information drawn from the context — the persona is flavor, not filler. Keep answers tight and grounded. If the context is insufficient, say so straight.\\n\\nCONTEXT FROM BOSS\\'S KNOWLEDGE BASE:\\n' + context;\n\nconst sources = [...new Set(chunks.map(c => c.title))];\n\nreturn [{\n  json: {\n    payload: {\n      model: 'claude-haiku-4-5',\n      messages: [\n        { role: 'system', content: systemPrompt },\n        { role: 'user', content: question }\n      ]\n    },\n    sources\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-220, 160],
+      "id": "rq-build-001",
+      "name": "Build LLM Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://litellm:4000/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Authorization", "value": "=Bearer {{ $env.WEBUI_SECRET_KEY }}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": { "timeout": 60000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [0, 160],
+      "id": "rq-llm-001",
+      "name": "Call LLM"
+    },
+    {
+      "parameters": {
+        "jsCode": "const llm = $input.first().json;\nconst sources = $('Build LLM Request').first().json.sources;\nconst answer = llm.choices && llm.choices[0] && llm.choices[0].message && llm.choices[0].message.content\n  ? llm.choices[0].message.content\n  : 'Boss, somethin\\'s off — the LLM came back empty. Check the logs.';\nreturn [{ json: { answer, sources } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [220, 160],
+      "id": "rq-format-001",
+      "name": "Format Response"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ answer: $json.answer, sources: $json.sources }) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [440, 160],
+      "id": "rq-respond-ok-001",
+      "name": "Respond Success"
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook":       { "main": [[{"node": "Embed & Search", "type": "main", "index": 0}]] },
-    "Embed & Search":{ "main": [[{"node": "Call LLM",       "type": "main", "index": 0}]] },
-    "Call LLM":      { "main": [[{"node": "Respond",        "type": "main", "index": 0}]] }
+    "Webhook":          { "main": [[{ "node": "Embed & Search",     "type": "main", "index": 0 }]] },
+    "Embed & Search":   { "main": [[{ "node": "Has Error?",         "type": "main", "index": 0 }]] },
+    "Has Error?":       { "main": [
+      [{ "node": "Respond Error",      "type": "main", "index": 0 }],
+      [{ "node": "Build LLM Request",  "type": "main", "index": 0 }]
+    ] },
+    "Build LLM Request":{ "main": [[{ "node": "Call LLM",           "type": "main", "index": 0 }]] },
+    "Call LLM":         { "main": [[{ "node": "Format Response",    "type": "main", "index": 0 }]] },
+    "Format Response":  { "main": [[{ "node": "Respond Success",    "type": "main", "index": 0 }]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }
