@@ -4,7 +4,7 @@
     {
       "parameters": {
         "httpMethod": "POST",
-        "path": "slack-bugsy",
+        "path": "slack-rag",
         "responseMode": "responseNode",
         "options": {}
       },
