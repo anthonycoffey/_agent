@@ -241,3 +241,32 @@ services:
         bind:
           create_host_path: false
     networks: [agent-net]
+
+  # ---------- Documentation ----------
+  #
+  # MkDocs Material — internal project documentation site. Source files live
+  # in ../docs/ and the site config in ../mkdocs.yml. Hot-reloads on file
+  # changes during a `mkdocs serve` run.
+  # Internal-only by default; expose via Cloudflare Tunnel hostname (e.g.
+  # docs.coffey.codes → http://mkdocs:8000) when you want it browsable.
+
+  mkdocs:
+    image: squidfunk/mkdocs-material:latest
+    container_name: agent-mkdocs
+    restart: unless-stopped
+    command: serve --dev-addr=0.0.0.0:8000
+    working_dir: /docs
+    volumes:
+      - type: bind
+        source: ../mkdocs.yml
+        target: /docs/mkdocs.yml
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ../docs
+        target: /docs/docs
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [agent-net]
