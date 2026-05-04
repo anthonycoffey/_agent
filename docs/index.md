@@ -2,6 +2,17 @@
 
 **Anthony Coffey's personal AI agent stack.** Runs 24/7 on a single GCP VM. Combines self-hosted LLMs, n8n workflows, RAG, and a Slack interface to automate the repetitive parts of freelance dev life — job hunting, lead gen, outreach, research — and to build a personal knowledge base that makes every AI interaction smarter over time.
 
+## Reading these docs locally
+
+Source files live in `docs/` in the repo. To browse them as a real site:
+
+```bash
+pip install mkdocs-material      # one-time
+mkdocs serve                     # from repo root → http://localhost:8000
+```
+
+Or just read the markdown files directly in your editor / on GitHub.
+
 ## What's in here
 
 These docs explain how Bugsy is put together and how to operate it.

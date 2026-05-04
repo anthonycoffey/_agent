@@ -29,7 +29,6 @@ Cloud-init bootstraps the VM on first boot only. Any changes after that are depl
 | `agent-n8n` | n8nio/n8n | Workflow automation, webhooks, AI Agent runtime |
 | `agent-cloudflared` | cloudflare/cloudflared | Public ingress (Cloudflare Tunnel) |
 | `agent-searxng` | searxng/searxng | Self-hosted metasearch for research workflows |
-| `agent-mkdocs` | squidfunk/mkdocs-material | This documentation site |
 
 ## Models available (via LiteLLM at `http://litellm:4000/v1`)
 

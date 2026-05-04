@@ -9,7 +9,6 @@ The VM has no public IP address. It is unreachable from the internet directly. A
 | Hostname | Routes to | Purpose |
 |---|---|---|
 | `n8n.coffey.codes` | `agent-n8n:5678` | n8n editor + webhooks |
-| `docs.coffey.codes` | `agent-mkdocs:8000` | This documentation site |
 
 Add a new hostname by editing the Cloudflare Tunnel configuration in the Cloudflare dashboard (Zero Trust → Networks → Tunnels → your tunnel → Public Hostnames).
 
