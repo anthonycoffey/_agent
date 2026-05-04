@@ -92,9 +92,11 @@ _agent/
 │   │   └── migrations/           # Schema migrations (run manually)
 │   └── searxng/settings.yml      # SearXNG config
 ├── tf/                           # Terraform — GCP VM, networking, IAM, state backend
-├── docs/
-│   ├── decisions.md              # Architecture decision log (newest first)
-│   └── incident-log.md           # Chronological record of deployment incidents + fixes
+├── docs/                         # MkDocs Material — project documentation site (self-hosted)
+├── logs/
+│   ├── decisions-log.md          # Architecture decision log (newest first)
+│   ├── incident-log.md           # Chronological record of deployment incidents + fixes
+│   └── plans/                    # Working plans for in-flight initiatives
 └── CLAUDE.md                     # This file
 ```
 
