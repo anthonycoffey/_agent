@@ -1,0 +1,436 @@
+{
+  "name": "Bugsy",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-bugsy",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1600, 0],
+      "id": "bugsy-webhook-events-001",
+      "name": "Webhook (Slack Events)",
+      "webhookId": "bugsy-events-webhook-001"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "is-verification",
+              "leftValue": "={{ $json.body.type }}",
+              "rightValue": "url_verification",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1380, 0],
+      "id": "bugsy-if-urlverify-001",
+      "name": "Is URL Verification?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"challenge\": \"{{ $json.body.challenge }}\"}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-1160, -160],
+      "id": "bugsy-respond-challenge-001",
+      "name": "Respond With Challenge"
+    },
+    {
+      "parameters": {
+        "respondWith": "noData",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-1160, 160],
+      "id": "bugsy-respond-200-001",
+      "name": "Respond 200 OK"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "not-bot",
+              "leftValue": "={{ $json.body.event.bot_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "has-text",
+              "leftValue": "={{ $json.body.event.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-940, 160],
+      "id": "bugsy-if-shouldrespond-001",
+      "name": "Should Bugsy Respond?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "ev-chatinput", "name": "chatInput", "value": "={{ $json.body.event.text.replace(/<@[A-Z0-9]+>\\s*/g, '').trim() }}", "type": "string" },
+            { "id": "ev-source",    "name": "source",    "value": "event", "type": "string" },
+            { "id": "ev-userid",    "name": "userId",    "value": "={{ $json.body.event.user }}", "type": "string" },
+            { "id": "ev-username",  "name": "userName",  "value": "={{ $json.body.event.user_name || '' }}", "type": "string" },
+            { "id": "ev-channel",   "name": "channel",   "value": "={{ $json.body.event.channel }}", "type": "string" },
+            { "id": "ev-threadts",  "name": "threadTs",  "value": "={{ $json.body.event.thread_ts || $json.body.event.ts }}", "type": "string" },
+            { "id": "ev-sessionkey","name": "sessionKey","value": "={{ $json.body.event.channel_type === 'im' ? 'slack:dm:' + $json.body.event.user : 'slack:thread:' + $json.body.event.channel + ':' + ($json.body.event.thread_ts || $json.body.event.ts) }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-720, 160],
+      "id": "bugsy-normalize-event-001",
+      "name": "Normalize Event"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ask",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-1600, 480],
+      "id": "bugsy-webhook-slash-001",
+      "name": "Webhook (/ask)",
+      "webhookId": "bugsy-ask-webhook-001"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ ($json.body.text || '').trim() ? 'On it, boss...' : 'What\\'s the question, boss? Try: /ask what are my strongest skills?' }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-1380, 480],
+      "id": "bugsy-ack-slash-001",
+      "name": "ACK Slash"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "slash-has-text",
+              "leftValue": "={{ ($json.body.text || '').trim() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-1160, 480],
+      "id": "bugsy-if-slashtext-001",
+      "name": "Slash Has Text?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "sl-chatinput",  "name": "chatInput",  "value": "={{ ($json.body.text || '').trim() }}", "type": "string" },
+            { "id": "sl-source",     "name": "source",     "value": "slash", "type": "string" },
+            { "id": "sl-userid",     "name": "userId",     "value": "={{ $json.body.user_id }}", "type": "string" },
+            { "id": "sl-username",   "name": "userName",   "value": "={{ $json.body.user_name || '' }}", "type": "string" },
+            { "id": "sl-channel",    "name": "channel",    "value": "={{ $json.body.channel_id || '' }}", "type": "string" },
+            { "id": "sl-threadts",   "name": "threadTs",   "value": "", "type": "string" },
+            { "id": "sl-responseurl","name": "responseUrl","value": "={{ $json.body.response_url }}", "type": "string" },
+            { "id": "sl-sessionkey", "name": "sessionKey", "value": "=slack:slash:{{ $json.body.user_id }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-940, 480],
+      "id": "bugsy-normalize-slash-001",
+      "name": "Normalize Slash"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://ollama:11434/api/embeddings",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            { "name": "model", "value": "nomic-embed-text" },
+            { "name": "prompt", "value": "={{ $json.chatInput }}" }
+          ]
+        },
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-460, 320],
+      "id": "bugsy-embed-001",
+      "name": "Embed Question"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://qdrant:6333/collections/personal_knowledge/points/search",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ vector: $json.embedding, limit: 5, with_payload: true }) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-240, 320],
+      "id": "bugsy-search-001",
+      "name": "Search Qdrant"
+    },
+    {
+      "parameters": {
+        "jsCode": "const search = $input.first().json;\nconst hits = (search.result || []).map(r => ({\n  text: r.payload.text,\n  title: r.payload.title,\n  category: r.payload.category,\n  score: Math.round(r.score * 100) / 100\n}));\n\n// Pull the normalized fields from whichever upstream branch fed this run\nconst src = $('Normalize Event').first()?.json || $('Normalize Slash').first()?.json || {};\n\nconst context = hits.length\n  ? hits.map((c, i) => '[' + (i+1) + '] ' + c.title + '\\n' + c.text).join('\\n\\n')\n  : 'No relevant context found in knowledge base.';\n\nconst sources = [...new Set(hits.map(h => h.title))];\n\nreturn [{\n  json: {\n    chatInput: src.chatInput,\n    sessionKey: src.sessionKey,\n    source: src.source,\n    userId: src.userId,\n    userName: src.userName,\n    channel: src.channel,\n    threadTs: src.threadTs,\n    responseUrl: src.responseUrl,\n    context,\n    sources\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-20, 320],
+      "id": "bugsy-build-context-001",
+      "name": "Build Context"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are Bugsy — the boss's right hand. 1970s New York Italian-American, connected to the life (cosa nostra). Cool, smooth, knows everybody. Sharp humor with a hint of menace. You call the user 'boss' or 'skip', etc. or any other endearing term that a mafia capo would use toward their Don.\n\nRules:\n- Keep responses SHORT for Slack (1-3 sentences usually).\n- ONE OR TWO voice flourishes per message MAX — 'capisce', 'ya', dropped g's ('nothin'', 'talkin''), 'lemme tell ya', 'between you and me'. Do NOT make every word an accent. The persona is seasoning, not the meal.\n- Direct, action-oriented. No filler.\n- If asked to draft an email: output JUST the email body, professional tone matching the recipient. The persona drops to ZERO in email content.\n- If asked to do something you can't actually do (send email, query inbox, run code, etc.): say so plainly. Example: 'Can't reach into your inbox just yet, boss. We'll get there.'\n- NEVER fake capability. Don't claim to have done something you didn't.\n- A little dry humor is on-brand; cartoony goofiness is not. Bugsy ain't nobody's clown, capiche?\n\nYou are talking to {{ $json.userName }}, Slack user <@{{ $json.userId }}>. When addressing them, you may use their @mention if it adds emphasis or clarity.\n\nCONTEXT FROM BOSS'S KNOWLEDGE BASE (use when relevant — don't force it):\n{{ $json.context }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [220, 320],
+      "id": "bugsy-agent-001",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionKey }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [340, 540],
+      "id": "bugsy-memory-001",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "pH9jQ7ntBiIspcBT",
+          "name": "Postgres - Memory database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-6",
+          "mode": "list",
+          "cachedResultName": "claude-sonnet-4-6"
+        },
+        "builtInTools": {
+          "codeInterpreter": false
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [180, 540],
+      "id": "bugsy-lm-001",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "umDluPchh1il2V8f",
+          "name": "LiteLLM - local proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "src-is-event",
+              "leftValue": "={{ $('Build Context').first().json.source }}",
+              "rightValue": "event",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [460, 320],
+      "id": "bugsy-route-001",
+      "name": "Route by Source"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Build Context').first().json.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('Build Context').first().json.threadTs }}"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [700, 160],
+      "id": "bugsy-slack-reply-001",
+      "name": "Send Slack Reply",
+      "webhookId": "bugsy-reply-001",
+      "credentials": {
+        "slackApi": {
+          "id": "TIP9AbQBq7X5Qidd",
+          "name": "Slack - Bugsy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Build Context').first().json.responseUrl }}",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ response_type: 'in_channel', text: $json.output + ($('Build Context').first().json.sources.length ? '\\n\\n_Sources: ' + $('Build Context').first().json.sources.join(', ') + '_' : '') }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [700, 480],
+      "id": "bugsy-slash-reply-001",
+      "name": "POST to Slash response_url"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (Slack Events)": { "main": [[{ "node": "Is URL Verification?", "type": "main", "index": 0 }]] },
+    "Is URL Verification?":   { "main": [
+      [{ "node": "Respond With Challenge", "type": "main", "index": 0 }],
+      [{ "node": "Respond 200 OK",         "type": "main", "index": 0 }]
+    ] },
+    "Respond 200 OK":         { "main": [[{ "node": "Should Bugsy Respond?", "type": "main", "index": 0 }]] },
+    "Should Bugsy Respond?":  { "main": [[{ "node": "Normalize Event",       "type": "main", "index": 0 }]] },
+    "Normalize Event":        { "main": [[{ "node": "Embed Question",        "type": "main", "index": 0 }]] },
+
+    "Webhook (/ask)":         { "main": [[{ "node": "ACK Slash",             "type": "main", "index": 0 }]] },
+    "ACK Slash":              { "main": [[{ "node": "Slash Has Text?",       "type": "main", "index": 0 }]] },
+    "Slash Has Text?":        { "main": [[{ "node": "Normalize Slash",       "type": "main", "index": 0 }]] },
+    "Normalize Slash":        { "main": [[{ "node": "Embed Question",        "type": "main", "index": 0 }]] },
+
+    "Embed Question":         { "main": [[{ "node": "Search Qdrant",         "type": "main", "index": 0 }]] },
+    "Search Qdrant":          { "main": [[{ "node": "Build Context",         "type": "main", "index": 0 }]] },
+    "Build Context":          { "main": [[{ "node": "AI Agent",              "type": "main", "index": 0 }]] },
+
+    "Postgres Chat Memory":   { "ai_memory":        [[{ "node": "AI Agent", "type": "ai_memory",        "index": 0 }]] },
+    "OpenAI Chat Model":      { "ai_languageModel": [[{ "node": "AI Agent", "type": "ai_languageModel", "index": 0 }]] },
+
+    "AI Agent":               { "main": [[{ "node": "Route by Source",       "type": "main", "index": 0 }]] },
+    "Route by Source":        { "main": [
+      [{ "node": "Send Slack Reply",            "type": "main", "index": 0 }],
+      [{ "node": "POST to Slash response_url",  "type": "main", "index": 0 }]
+    ] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}
