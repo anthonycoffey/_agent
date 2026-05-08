@@ -47,7 +47,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Drop jobs whose URL is already stored — saves us scoring them again with the LLM.\nconst allJobs = $('Normalize + Filter').first().json.jobs || [];\nconst row = $input.first().json || {};\nconst urls = Array.isArray(row.urls) ? row.urls : (typeof row.urls === 'string' ? row.urls.replace(/^\\{|\\}$/g,'').split(',').filter(Boolean) : []);\nconst existing = new Set(urls);\nconst newJobs = allJobs.filter(j => !existing.has(j.url));\n// Stash the pre-score totals so the final summary can show what got filtered at each stage.\nreturn newJobs.map(j => ({ json: { ...j, _meta: { fetchedTotal: allJobs.length, alreadyStored: allJobs.length - newJobs.length, newCount: newJobs.length } } }));"
+        "jsCode": "// Drop URLs already stored. Outputs ONE item containing the full new-jobs batch —\n// downstream uses a single batched LLM call instead of per-item iteration\n// (n8n's per-item HTTP path was silently dropping items, so the whole score\n// path runs as 1→1 now).\nconst allJobs = $('Normalize + Filter').first().json.jobs || [];\nconst row = $input.first().json || {};\nconst urls = Array.isArray(row.urls) ? row.urls : (typeof row.urls === 'string' ? row.urls.replace(/^\\{|\\}$/g,'').split(',').filter(Boolean) : []);\nconst existing = new Set(urls);\nconst newJobs = allJobs.filter(j => !existing.has(j.url));\nreturn [{ json: { newJobs, fetchedTotal: allJobs.length, alreadyStored: allJobs.length - newJobs.length, newCount: newJobs.length } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -57,7 +57,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Build the LiteLLM /v1/chat/completions payload for ONE job at a time.\n// System prompt encodes the boss's qualification profile + anti-profile. Update it\n// here when the criteria change — it's the single source of truth for fit scoring.\nconst job = $json;\n\nconst systemPrompt = [\n  'You are a strict hiring-fit scorer for Anthony Coffey, a senior full-stack developer.',\n  '',\n  'PROFILE — Anthony is highly qualified for:',\n  '- Full-stack web: React, Next.js, Node.js, TypeScript, JavaScript',\n  '- Mobile: React Native, Flutter, iOS, Android, Expo',\n  '- Backend: Node.js, Python, Express, FastAPI',\n  '- Cloud / infra: GCP, Firebase, Docker',\n  '- AI/ML INTEGRATION: LLM apps, RAG, OpenAI/Anthropic APIs, agent workflows, prompt eng',\n  '- Bonus: security-conscious environments (healthtech, fintech)',\n  '',\n  'ANTI-PROFILE — score these LOW (Anthony lacks significant experience):',\n  '- Java / Spring / Spring Boot',\n  '- C# / .NET / ASP.NET',\n  '- Salesforce, SAP, Oracle, COBOL, mainframe, AS/400',\n  '- Pure data engineering (Hadoop, Spark, Scala, Kafka-heavy)',\n  '- ML research roles (PyTorch / TensorFlow research, model training)',\n  '- Embedded / firmware / C / C++ / Rust systems',\n  '- DevOps-only / SRE-only roles requiring deep K8s expertise',\n  '- Financial analyst / quant / trader roles',\n  '- Pure design / UX roles',\n  '- Game dev (Unity, Unreal)',\n  '- Senior engineering manager / EM / director roles (Anthony is an IC)',\n  '',\n  'Respond with ONLY this JSON object, no commentary, no markdown fences:',\n  '{\"score\": <integer 0-100>, \"reason\": \"one short sentence, max 15 words\"}',\n  '',\n  'Rubric:',\n  '- 90-100: Strong direct match. Senior full-stack, AI integration, or React/RN/Flutter explicit.',\n  '- 75-89:  Solid fit. Most criteria match; minor gaps OK.',\n  '- 50-74:  Partial overlap but key skill mismatched (e.g. PHP/Laravel-heavy).',\n  '- 25-49:  Mostly outside profile (Java backend, .NET, etc.).',\n  '- 0-24:   Anti-profile (Spring Boot, Salesforce, financial analyst, etc.).',\n  '',\n  'Be honest. The boss only wants jobs he is likely to interview for.'\n].join('\\n');\n\nconst userPrompt = [\n  'Title: ' + (job.title || ''),\n  'Company: ' + (job.company || ''),\n  'Tags: ' + ((job.tech_tags || []).join(', ') || '—'),\n  'Description: ' + ((job.description || '').substring(0, 500)),\n  '',\n  'Score this job.'\n].join('\\n');\n\nreturn [{ json: {\n  job,\n  payload: {\n    model: 'claude-haiku-4-5',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user',   content: userPrompt }\n    ],\n    temperature: 0.1,\n    max_tokens: 100\n  }\n}}];"
+        "jsCode": "// Build ONE batched LiteLLM payload that scores every new job in a single round-trip.\n// 100-job cap keeps us inside Claude Haiku's 8k output budget; if there's a backlog,\n// the leftover scores tomorrow when those URLs are still 'new'.\nconst MAX_BATCH = 100;\nconst { newJobs } = $input.first().json;\nconst all = newJobs || [];\nconst batch = all.slice(0, MAX_BATCH);\nconst remainderCount = all.length - batch.length;\n\nconst systemPrompt = [\n  'You are a strict hiring-fit scorer for Anthony Coffey, a senior full-stack developer.',\n  '',\n  'PROFILE — Anthony is highly qualified for:',\n  '- Full-stack web: React, Next.js, Node.js, TypeScript, JavaScript',\n  '- Mobile: React Native, Flutter, iOS, Android, Expo',\n  '- Backend: Node.js, Python, Express, FastAPI',\n  '- Cloud / infra: GCP, Firebase, Docker',\n  '- AI/ML INTEGRATION: LLM apps, RAG, OpenAI/Anthropic APIs, agent workflows, prompt eng',\n  '- Bonus: security-conscious environments (healthtech, fintech)',\n  '',\n  'ANTI-PROFILE — score these LOW (Anthony lacks significant experience):',\n  '- Java / Spring / Spring Boot',\n  '- C# / .NET / ASP.NET',\n  '- Salesforce, SAP, Oracle, COBOL, mainframe, AS/400',\n  '- Pure data engineering (Hadoop, Spark, Scala, Kafka-heavy)',\n  '- ML research roles (PyTorch / TensorFlow research, model training)',\n  '- Embedded / firmware / C / C++ / Rust systems',\n  '- DevOps-only / SRE-only roles requiring deep K8s expertise',\n  '- Financial analyst / quant / trader roles',\n  '- Pure design / UX roles',\n  '- Game dev (Unity, Unreal)',\n  '- Senior engineering manager / EM / director roles (Anthony is an IC)',\n  '',\n  'Rubric:',\n  '- 90-100: Strong direct match. Senior full-stack, AI integration, or React/RN/Flutter explicit.',\n  '- 75-89:  Solid fit. Most criteria match; minor gaps OK.',\n  '- 50-74:  Partial overlap but key skill mismatched (e.g. PHP/Laravel-heavy).',\n  '- 25-49:  Mostly outside profile (Java backend, .NET, etc.).',\n  '- 0-24:   Anti-profile (Spring Boot, Salesforce, financial analyst, etc.).',\n  '',\n  'You will receive a numbered list of jobs. Score every job independently.',\n  'Respond with ONLY this JSON (no commentary, no markdown fences):',\n  '{\"results\":[{\"id\":<integer>,\"score\":<integer 0-100>,\"reason\":\"<short sentence, max 15 words>\"}, ...]}',\n  '',\n  'CRITICAL: include exactly one entry per job, using the numeric id from the input. Be honest — the boss only wants jobs he is likely to interview for.'\n].join('\\n');\n\nconst jobLines = batch.map((j, i) => {\n  return `[${i+1}] Title: ${(j.title||'').substring(0,160)} | Company: ${(j.company||'').substring(0,80)} | Tags: ${(j.tech_tags||[]).join(', ') || '—'} | Description: ${(j.description||'').substring(0,260)}`;\n}).join('\\n\\n');\n\nconst userPrompt = batch.length\n  ? ('Score every job below. Return one result per id.\\n\\n' + jobLines)\n  : 'Return {\"results\":[]}.';\n\nreturn [{ json: {\n  payload: {\n    model: 'claude-haiku-4-5',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user',   content: userPrompt }\n    ],\n    temperature: 0.1,\n    max_tokens: 8000\n  },\n  batch,\n  remainderCount,\n  emptyBatch: batch.length === 0\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -80,13 +80,13 @@
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify($json.payload) }}",
-        "options": { "timeout": 30000 }
+        "options": { "timeout": 120000 }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [-240, 0],
       "id": "jb-score",
-      "name": "Score Job",
+      "name": "Score Jobs",
       "onError": "continueRegularOutput",
       "credentials": {
         "httpHeaderAuth": { "id": "38AL9NfKmBOkT9bx", "name": "LiteLLM Bearer" }
@@ -94,24 +94,23 @@
     },
     {
       "parameters": {
-        "jsCode": "// Parse the LLM JSON. If anything goes sideways, score 0 with a parse-error reason —\n// these get dropped at the threshold step, so a flaky LLM call never poisons the table.\nconst llm = $json || {};\nconst job = $('Build Score Request').item.json.job;\nlet score = 0;\nlet reason = 'parse error';\ntry {\n  const content = (llm.choices && llm.choices[0] && llm.choices[0].message && llm.choices[0].message.content) || '';\n  const cleaned = content.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n  const parsed = JSON.parse(cleaned);\n  const raw = parseInt(parsed.score, 10);\n  score = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;\n  reason = String(parsed.reason || '').substring(0, 300);\n} catch (e) {\n  score = 0;\n  reason = 'parse error: ' + e.message;\n}\nreturn [{ json: Object.assign({}, job, { match_score: score, match_reason: reason, scored_at: new Date().toISOString() }) }];"
+        "jsCode": "// Map LLM scores back onto each job by id. Any job the LLM forgot defaults to score=0\n// so it gets dropped at the threshold step instead of silently disappearing.\nconst llm = $json || {};\nconst { batch, remainderCount, emptyBatch } = $('Build Score Request').first().json;\n\nlet results = [];\nlet parseError = null;\nif (!emptyBatch) {\n  try {\n    const content = (llm.choices && llm.choices[0] && llm.choices[0].message && llm.choices[0].message.content) || '';\n    const cleaned = content.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n    const parsed = JSON.parse(cleaned);\n    results = Array.isArray(parsed.results) ? parsed.results : [];\n  } catch (e) {\n    parseError = e.message;\n  }\n}\n\nconst byId = new Map();\nfor (const r of results) {\n  const id = parseInt(r.id, 10);\n  if (Number.isFinite(id)) {\n    byId.set(id, {\n      score: Math.max(0, Math.min(100, parseInt(r.score, 10) || 0)),\n      reason: String(r.reason || '').substring(0, 300)\n    });\n  }\n}\n\nconst now = new Date().toISOString();\nconst scoredJobs = (batch || []).map((job, i) => {\n  const r = byId.get(i + 1);\n  return Object.assign({}, job, {\n    match_score: r ? r.score : 0,\n    match_reason: r ? r.reason : (parseError ? ('parse error: ' + parseError) : 'no score returned'),\n    scored_at: now\n  });\n});\n\nreturn [{ json: { scoredJobs, remainderCount, parseError } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [0, 0],
       "id": "jb-parse-score",
-      "name": "Parse Score"
+      "name": "Parse Scores"
     },
     {
       "parameters": {
-        "jsCode": "// Aggregate every scored job, apply the threshold, prep stats for the summary.\n// alwaysOutputData=true so a 0-new-jobs day still produces a single output item\n// (which keeps the rest of the chain alive and yields a 'nothing today' Slack note).\nconst THRESHOLD = 75;\nconst items = $input.all().map(i => i.json);\nconst kept = items.filter(j => (j.match_score || 0) >= THRESHOLD);\nconst dropped = items.filter(j => (j.match_score || 0) < THRESHOLD);\nkept.sort((a,b) => (b.match_score||0) - (a.match_score||0));\n\n// Pull pre-score stats off the first item if available — Filter to New Jobs\n// stamps fetchedTotal/alreadyStored/newCount onto each item via _meta.\nconst meta = (items[0] && items[0]._meta) || { fetchedTotal: 0, alreadyStored: 0, newCount: items.length };\n\n// Strip _meta off every job before they hit the SQL builder.\nconst clean = (j) => { const c = Object.assign({}, j); delete c._meta; return c; };\n\nreturn [{ json: {\n  kept: kept.map(clean),\n  droppedCount: dropped.length,\n  totalScored: items.length,\n  threshold: THRESHOLD,\n  fetchedTotal: meta.fetchedTotal,\n  alreadyStored: meta.alreadyStored,\n  topThree: kept.slice(0, 3).map(j => ({ title: j.title, company: j.company, score: j.match_score, reason: j.match_reason }))\n}}];"
+        "jsCode": "const THRESHOLD = 75;\nconst { scoredJobs, remainderCount, parseError } = $input.first().json;\nconst items = scoredJobs || [];\nconst kept = items.filter(j => (j.match_score || 0) >= THRESHOLD);\nconst dropped = items.filter(j => (j.match_score || 0) < THRESHOLD);\nkept.sort((a,b) => (b.match_score||0) - (a.match_score||0));\n\nconst filterMeta = $('Filter to New Jobs').first().json;\n\nreturn [{ json: {\n  kept,\n  droppedCount: dropped.length,\n  totalScored: items.length,\n  threshold: THRESHOLD,\n  fetchedTotal: filterMeta.fetchedTotal || 0,\n  alreadyStored: filterMeta.alreadyStored || 0,\n  remainderCount: remainderCount || 0,\n  parseError: parseError || null,\n  topThree: kept.slice(0, 3).map(j => ({ title: j.title, company: j.company, score: j.match_score, reason: j.match_reason }))\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [240, 0],
       "id": "jb-aggregate",
-      "name": "Aggregate Scored",
-      "alwaysOutputData": true
+      "name": "Aggregate Scored"
     },
     {
       "parameters": {
@@ -134,7 +133,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const agg = $('Aggregate Scored').first().json;\nconst inserted = $('Prepare Insert SQL').first().json.total || 0;\nconst date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });\nconst threshold = agg.threshold || 75;\nconst topLines = (agg.topThree || []).map(t => `• *${t.score}* — ${t.title} @ ${t.company || '?'}`).join('\\n');\nconst topBlock = topLines ? `\\n\\n*Top picks:*\\n${topLines}` : '';\nconst slackText = `📋 *Job Board Sweep — ${date}*\\n*${inserted} new jobs* cleared the ${threshold} fit score (out of ${agg.totalScored||0} scored, ${agg.droppedCount||0} dropped).\\n_Pre-score: ${agg.fetchedTotal||0} fetched, ${agg.alreadyStored||0} already stored._\\nBrowse 'em: <https://n8n.coffey.codes/webhook/job-board|coffey.codes job board>${topBlock}`;\nreturn [{ json: { slackText } }];"
+        "jsCode": "const agg = $('Aggregate Scored').first().json;\nconst inserted = $('Prepare Insert SQL').first().json.total || 0;\nconst date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });\nconst threshold = agg.threshold || 75;\nconst topLines = (agg.topThree || []).map(t => `• *${t.score}* — ${t.title} @ ${t.company || '?'}`).join('\\n');\nconst topBlock = topLines ? `\\n\\n*Top picks:*\\n${topLines}` : '';\nconst remainderNote = (agg.remainderCount > 0) ? `\\n_Note: ${agg.remainderCount} extra new jobs deferred to tomorrow's run (batch cap)._` : '';\nconst parseNote = agg.parseError ? `\\n⚠️ _Score parse failed: ${agg.parseError}_` : '';\nconst slackText = `📋 *Job Board Sweep — ${date}*\\n*${inserted} new jobs* cleared the ${threshold} fit score (out of ${agg.totalScored||0} scored, ${agg.droppedCount||0} dropped).\\n_Pre-score: ${agg.fetchedTotal||0} fetched, ${agg.alreadyStored||0} already stored._${remainderNote}${parseNote}\\nBrowse 'em: <https://n8n.coffey.codes/webhook/job-board|coffey.codes job board>${topBlock}`;\nreturn [{ json: { slackText } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -164,9 +163,9 @@
     "Normalize + Filter":    { "main": [[{"node": "Get Existing URLs",      "type": "main", "index": 0}]] },
     "Get Existing URLs":     { "main": [[{"node": "Filter to New Jobs",     "type": "main", "index": 0}]] },
     "Filter to New Jobs":    { "main": [[{"node": "Build Score Request",    "type": "main", "index": 0}]] },
-    "Build Score Request":   { "main": [[{"node": "Score Job",              "type": "main", "index": 0}]] },
-    "Score Job":             { "main": [[{"node": "Parse Score",            "type": "main", "index": 0}]] },
-    "Parse Score":           { "main": [[{"node": "Aggregate Scored",       "type": "main", "index": 0}]] },
+    "Build Score Request":   { "main": [[{"node": "Score Jobs",             "type": "main", "index": 0}]] },
+    "Score Jobs":            { "main": [[{"node": "Parse Scores",           "type": "main", "index": 0}]] },
+    "Parse Scores":          { "main": [[{"node": "Aggregate Scored",       "type": "main", "index": 0}]] },
     "Aggregate Scored":      { "main": [[{"node": "Prepare Insert SQL",     "type": "main", "index": 0}]] },
     "Prepare Insert SQL":    { "main": [[{"node": "Upsert to Postgres",     "type": "main", "index": 0}]] },
     "Upsert to Postgres":    { "main": [[{"node": "Format Slack Summary",   "type": "main", "index": 0}]] },

@@ -109,7 +109,7 @@ manually re-imported into n8n via the UI (Import from URL using the GitHub raw U
 
 | File | Status | Purpose |
 |---|---|---|
-| `bugsy-job-board-fetcher.json` | Active | Daily cron (5:30am CT, M-F): fetches 20+ job boards, dedupes against DB, **LLM-scores each new job (haiku-4-5) for fit against Anthony's profile, only inserts score ≥75**, posts Slack summary with top picks. Threshold is `THRESHOLD` const in *Aggregate Scored* node; criteria in *Build Score Request* system prompt. |
+| `bugsy-job-board-fetcher.json` | Active | Daily cron (5:30am CT, M-F): fetches 20+ job boards, dedupes against DB, **LLM-scores all new jobs in one batched haiku-4-5 call (1→1 along the score path; per-item iteration silently dropped items in n8n), only inserts score ≥75**, posts Slack summary with top picks. Threshold is `THRESHOLD` const in *Aggregate Scored* node; criteria in *Build Score Request* system prompt; 100-job batch cap, remainder defers to next day. |
 | `bugsy-job-board-ui.json` | Active | Webhook GET `/job-board`: dark-mode HTML board, default sort = best fit first, min-score slider (default 75), score badge + LLM rationale on every row. `https://n8n.coffey.codes/webhook/job-board` |
 | `bugsy-rag-ingest.json` | Active | Webhook POST `/rag-ingest`: receives `{category, content}`, parses YAML frontmatter, chunks text (~400 chars, 50 overlap), embeds via Ollama `nomic-embed-text`, upserts to Qdrant `personal_knowledge` collection |
 | `bugsy-chat.json` | Unknown | Bugsy chat interface |

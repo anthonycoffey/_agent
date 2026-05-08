@@ -8,20 +8,24 @@ table — so the board only shows jobs Anthony is highly likely to interview for
 
 `agent/n8n/workflows/bugsy-job-board-fetcher.json` — daily cron, 5:30am CT M-F.
 
-The fetcher pipeline:
+The fetcher pipeline (all 1→1 along the score path — see [Why batched](#why-batched-not-per-item) below):
 
 1. **Fetch All Sources** — pull 20+ job boards (5 JSON APIs + 16 RSS feeds) concurrently via axios.
 2. **Normalize + Filter** — parse each source's shape, dedupe by URL within the batch, filter to listings that mention Anthony's stack.
 3. **Get Existing URLs** — Postgres `SELECT array_agg(url) FROM job_listings`. Anything already stored skips the LLM step (saves tokens, prevents re-scoring on schedule jitter).
-4. **Filter to New Jobs** — split the deduped batch into N items, one per genuinely-new URL.
-5. **Build Score Request** — per item, build a LiteLLM chat-completions payload. The system prompt is the source of truth for fit criteria — see [Scoring profile](#scoring-profile) below.
-6. **Score Job** — HTTP POST to `http://litellm:4000/v1/chat/completions` (model: `claude-haiku-4-5`, temp 0.1, max 100 tokens, 30s timeout). One call per job. `onError: continueRegularOutput` so a flaky LLM doesn't crash the run.
-7. **Parse Score** — strict JSON parse of `{score, reason}`. Anything that fails to parse defaults to `score=0, reason="parse error: ..."` and gets dropped at the threshold step.
-8. **Aggregate Scored** — collect all scored items, apply the threshold (default 75), produce stats. `alwaysOutputData=true` keeps the chain alive on a 0-new-jobs day.
+4. **Filter to New Jobs** — drop URLs already in DB, output one item containing the full new-jobs array plus pre-score stats.
+5. **Build Score Request** — build ONE batched LiteLLM payload that lists every new job with a numeric id. Capped at 100 jobs per run; any extra defers to tomorrow (those URLs stay "new"). The system prompt is the source of truth for fit criteria — see [Scoring profile](#scoring-profile) below.
+6. **Score Jobs** — single HTTP POST to `http://litellm:4000/v1/chat/completions` (model: `claude-haiku-4-5`, temp 0.1, max_tokens 8000, 120s timeout). `onError: continueRegularOutput` so a flaky LLM doesn't crash the run.
+7. **Parse Scores** — strict JSON parse of `{"results":[{id,score,reason}, ...]}`. Maps each result back to its job by id; jobs the LLM forgot default to `score=0, reason="no score returned"` and get dropped at the threshold.
+8. **Aggregate Scored** — apply the threshold (default 75), produce stats including `remainderCount` for any deferred jobs.
 9. **Prepare Insert SQL** — only kept jobs (≥ threshold) get INSERT rows, with `match_score`, `match_reason`, `scored_at` populated.
 10. **Upsert to Postgres** — `INSERT ... ON CONFLICT (url) DO NOTHING`.
-11. **Format Slack Summary** — `N new jobs cleared the 75 fit score (out of M scored, K dropped)`, plus the top 3 picks by score.
+11. **Format Slack Summary** — `N new jobs cleared the 75 fit score (out of M scored, K dropped)`, plus the top 3 picks by score and a remainder note if jobs were deferred.
 12. **Send to Mulberry Street** — Slack channel `C0AV83XUSTU`.
+
+### Why batched, not per-item
+
+The first cut of this workflow ran one HTTP request per job, iterating n8n's per-item path. In practice n8n silently dropped most items between *Build Score Request* and *Aggregate Scored* — a 626-fetched / 444-stored / 182-new run scored only 1 job. Batching all jobs into a single LLM call (1→1 the whole way down) avoids that iteration entirely, and the system prompt only has to go over the wire once, so it's cheaper too. The 100-job cap keeps us inside Claude Haiku's 8k output budget; backlog spills into the next day.
 
 ### Scoring profile
 
@@ -90,4 +94,4 @@ inline under the title.
 - **UI status (reviewed/dismissed) is stored in browser `localStorage`** — doesn't sync across devices. A future refactor would persist back to `job_listings.status`.
 - **Pre-migration rows have `NULL` match_score** — they were stored before the scoring step existed. They show as `—` in the UI and only appear when the min-score slider is at 0.
 - **Threshold changes don't backfill** — old rows keep their original score. Re-scoring is a manual one-shot job.
-- **LLM scoring adds ~2 minutes to a 100-job run** — sequential HTTP calls at ~1s each. Acceptable for a 5:30am cron.
+- **LLM scoring is one batched call** — single LiteLLM round-trip per run, capped at 100 jobs. If a day fetches more than 100 net-new URLs, the rest defers to tomorrow (they're still "new" until inserted). Slack note flags when this happens.
