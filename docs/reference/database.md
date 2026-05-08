@@ -13,7 +13,9 @@
 
 ### `agent.job_listings`
 
-Populated daily by the job board fetcher.
+Populated daily by the job board fetcher. The fetcher LLM-scores every new job and
+only inserts ones that clear a fit threshold (default 75) — see
+[`workflows/job-board.md`](../workflows/job-board.md).
 
 | Column | Type | Notes |
 |---|---|---|
@@ -29,6 +31,9 @@ Populated daily by the job board fetcher.
 | `posted_at` | TIMESTAMPTZ | |
 | `fetched_at` | TIMESTAMPTZ | Default `now()` |
 | `status` | TEXT | `new` / `reviewed` / `dismissed` |
+| `match_score` | INT | 0–100 LLM fit score (migration 003). Non-null on rows inserted by the fetcher; null on pre-migration rows. |
+| `match_reason` | TEXT | One-line LLM rationale for the score. |
+| `scored_at` | TIMESTAMPTZ | When the score was computed. |
 
 ### `agent.leads`
 
@@ -52,11 +57,24 @@ Audit trail for the leads CRM.
 ### Useful queries
 
 ```sql
--- New jobs from the last 24h
-SELECT title, company, url, posted_at
+-- Best-fit new jobs from the last 24h
+SELECT match_score, title, company, match_reason, url
 FROM agent.job_listings
 WHERE status = 'new' AND fetched_at > NOW() - INTERVAL '24 hours'
-ORDER BY posted_at DESC;
+ORDER BY match_score DESC NULLS LAST, posted_at DESC;
+
+-- Score distribution of stored jobs (sanity-check the threshold)
+SELECT
+  CASE
+    WHEN match_score >= 90 THEN '90-100'
+    WHEN match_score >= 75 THEN '75-89'
+    WHEN match_score >= 50 THEN '50-74'
+    WHEN match_score IS NULL THEN 'pre-scoring'
+    ELSE '0-49'
+  END AS bucket,
+  COUNT(*) AS jobs
+FROM agent.job_listings
+GROUP BY 1 ORDER BY 1;
 
 -- n8n workflows currently active
 SELECT name, active, jsonb_path_query(nodes::jsonb, '$[*].parameters.path') AS webhook

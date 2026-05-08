@@ -109,8 +109,8 @@ manually re-imported into n8n via the UI (Import from URL using the GitHub raw U
 
 | File | Status | Purpose |
 |---|---|---|
-| `bugsy-job-board-fetcher.json` | Active | Daily cron (5:30am CT, M-F): fetches 20+ job boards (5 JSON APIs + 16 RSS feeds) concurrently via axios, normalizes, dedupes, upserts to `job_listings` table, posts Slack summary |
-| `bugsy-job-board-ui.json` | Active | Webhook GET `/job-board`: queries postgres, renders a dark-mode HTML job board with filter/sort/status controls. Access at `https://n8n.coffey.codes/webhook/job-board` |
+| `bugsy-job-board-fetcher.json` | Active | Daily cron (5:30am CT, M-F): fetches 20+ job boards, dedupes against DB, **LLM-scores each new job (haiku-4-5) for fit against Anthony's profile, only inserts score ≥75**, posts Slack summary with top picks. Threshold is `THRESHOLD` const in *Aggregate Scored* node; criteria in *Build Score Request* system prompt. |
+| `bugsy-job-board-ui.json` | Active | Webhook GET `/job-board`: dark-mode HTML board, default sort = best fit first, min-score slider (default 75), score badge + LLM rationale on every row. `https://n8n.coffey.codes/webhook/job-board` |
 | `bugsy-rag-ingest.json` | Active | Webhook POST `/rag-ingest`: receives `{category, content}`, parses YAML frontmatter, chunks text (~400 chars, 50 overlap), embeds via Ollama `nomic-embed-text`, upserts to Qdrant `personal_knowledge` collection |
 | `bugsy-chat.json` | Unknown | Bugsy chat interface |
 | `bugsy-inbox-watcher.json` | Unknown | Email inbox monitoring |
@@ -140,6 +140,9 @@ Populated by the job board fetcher daily.
 | `posted_at` | TIMESTAMPTZ | |
 | `fetched_at` | TIMESTAMPTZ | Default now() |
 | `status` | TEXT | `new` \| `reviewed` \| `dismissed` |
+| `match_score` | INT | 0–100 LLM fit score (added migration 003). Only jobs ≥ threshold get inserted. |
+| `match_reason` | TEXT | One-line LLM rationale for the score. |
+| `scored_at` | TIMESTAMPTZ | When the score was computed. |
 
 ### `leads`
 CRM table for outbound lead gen.
@@ -244,10 +247,12 @@ terraform apply "-replace=google_compute_instance.agent"
 
 ### Working
 - Full Docker stack deployed and healthy
-- Job board: daily fetch from 20+ sources → postgres → web UI at `https://n8n.coffey.codes/webhook/job-board`
+- Job board: daily fetch from 20+ sources → LLM fit-score → postgres → web UI at `https://n8n.coffey.codes/webhook/job-board`
 - RAG ingestion pipeline: markdown → chunk → embed → Qdrant
 
 ### In Progress / Next Up
+- **Run migration 003 on the VM** to add scoring columns: `docker exec -i agent-postgres psql -U agent -d agent < ~/agent/postgres/migrations/003_job_listings_scoring.sql`
+- **Re-import job board fetcher + UI workflows** in n8n after migration 003 lands
 - **Pull `nomic-embed-text`** on Ollama if not already: `docker exec agent-ollama ollama pull nomic-embed-text`
 - **Load personal knowledge docs** into `~/agent/rag/` (resume, articles, case studies)
 - **Cover letter drafter** — webhook that takes a job listing ID, pulls the posting + RAG context, drafts a tailored cover letter
@@ -272,3 +277,31 @@ Conventional Commits. No `Co-Authored-By` trailer. Examples:
 - `feat(rag): add personal knowledge ingestion pipeline`
 - `fix(job-board-ui): guard localStorage against sandboxed iframe`
 - `chore(tf): update VM machine type`
+
+---
+
+## Documentation discipline (REQUIRED)
+
+When you change behavior, ship the doc change in the same commit. The docs in `docs/` are the source
+of truth for how Bugsy operates — they go stale fast if we don't keep them honest.
+
+For every meaningful change, ask: **does this change something a future reader would have to
+re-discover by reading the JSON?** If yes, update the relevant page:
+
+| You changed... | Update... |
+|---|---|
+| A workflow's behavior, schedule, inputs, outputs | `docs/workflows/<workflow>.md` |
+| Database schema (columns, indexes, tables) | `docs/reference/database.md` **and** the schema table in this file |
+| Webhook path or webhook contract | `docs/reference/webhooks.md` |
+| Env var, secret, or model config | `docs/reference/env-vars.md` |
+| Container, network, or ingress topology | `docs/architecture/*.md` |
+| A non-obvious tradeoff or path-not-taken | one row in `logs/decisions-log.md` |
+| Production incident + fix | one entry in `logs/incident-log.md` |
+| New "current state" or "next up" item | the **Current State & Next Steps** section above |
+
+If a doc page doesn't exist for the area being changed, create it rather than burying notes
+in CLAUDE.md. CLAUDE.md is for *project context* (what's deployed, how it's wired, gotchas Claude
+needs to know to operate safely) — not user-facing reference material.
+
+Verify before claiming done: when you finish a change, re-read the relevant doc page top-to-bottom
+and confirm it still describes the system that exists.

@@ -8,17 +8,17 @@
       },
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [-1200, 0],
+      "position": [-1680, 0],
       "id": "jb-sched",
       "name": "Schedule Trigger"
     },
     {
       "parameters": {
-        "jsCode": "const axios = require('axios');\n\n// ── JSON APIs ─────────────────────────────────────────────────────────────────\nconst JSON_SOURCES = [\n  { id: 'remotive',         url: 'https://remotive.com/api/remote-jobs?category=software-development&limit=100' },\n  { id: 'remotive-ai',      url: 'https://remotive.com/api/remote-jobs?category=artificial-intelligence&limit=100' },\n  { id: 'jobicy',           url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&count=50' },\n  { id: 'workingnomads',    url: 'https://www.workingnomads.com/api/exposed_jobs/?category=development' },\n  { id: 'arbeitnow',        url: 'https://www.arbeitnow.com/api/job-board-api?remote=true' },\n];\n\n// ── RSS Feeds ─────────────────────────────────────────────────────────────────\nconst RSS_SOURCES = [\n  { id: 'wwr-frontend',      url: 'https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss' },\n  { id: 'wwr-backend',       url: 'https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss' },\n  { id: 'wwr-fullstack',     url: 'https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss' },\n  { id: 'wwr-devops',        url: 'https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss' },\n  { id: 'remotive-sw-rss',   url: 'https://remotive.com/remote-jobs/feed/software-development' },\n  { id: 'remotive-ai-rss',   url: 'https://remotive.com/remote-jobs/feed/artificial-intelligence' },\n  { id: 'rfj-react',         url: 'https://remotefirstjobs.com/rss/jobs/react.rss' },\n  { id: 'rfj-python',        url: 'https://remotefirstjobs.com/rss/jobs/python.rss' },\n  { id: 'rfj-ai',            url: 'https://remotefirstjobs.com/rss/jobs/ai.rss' },\n  { id: 'larajobs',          url: 'https://larajobs.com/feed' },\n  { id: 'wp-jobs',           url: 'https://jobs.wordpress.net/feed/' },\n  { id: 'pyjobs',            url: 'https://www.pyjobs.com/rss' },\n  { id: 'python-org',        url: 'https://www.python.org/jobs/feed/rss/' },\n  { id: 'vuejobs',           url: 'https://app.vuejobs.com/feed/posts' },\n  { id: 'authenticjobs',     url: 'https://authenticjobs.com/?feed=job_feed' },\n  { id: 'realwork-frontend', url: 'https://www.realworkfromanywhere.com/remote-frontend-jobs/rss.xml' },\n];\n\nasync function fetchOne(src, isRss) {\n  try {\n    const res = await axios.get(src.url, {\n      timeout: 15000,\n      responseType: isRss ? 'text' : 'json',\n      headers: { 'User-Agent': 'Bugsy-JobBot/1.0' },\n    });\n    return { id: src.id, ok: true, data: res.data };\n  } catch (e) {\n    return { id: src.id, ok: false, data: null, error: e.message };\n  }\n}\n\n// Fetch all sources concurrently — no more sequential chain.\nconst [jsonResults, rssResults] = await Promise.all([\n  Promise.all(JSON_SOURCES.map(s => fetchOne(s, false))),\n  Promise.all(RSS_SOURCES.map(s => fetchOne(s, true))),\n]);\n\nconst failed = [...jsonResults, ...rssResults].filter(r => !r.ok).map(r => r.id);\nreturn [{ json: { jsonResults, rssResults, failed } }];"
+        "jsCode": "const axios = require('axios');\n\n// ── JSON APIs ─────────────────────────────────────────────────────────────────\nconst JSON_SOURCES = [\n  { id: 'remotive',         url: 'https://remotive.com/api/remote-jobs?category=software-development&limit=100' },\n  { id: 'remotive-ai',      url: 'https://remotive.com/api/remote-jobs?category=artificial-intelligence&limit=100' },\n  { id: 'jobicy',           url: 'https://jobicy.com/api/v2/remote-jobs?industry=dev&count=50' },\n  { id: 'workingnomads',    url: 'https://www.workingnomads.com/api/exposed_jobs/?category=development' },\n  { id: 'arbeitnow',        url: 'https://www.arbeitnow.com/api/job-board-api?remote=true' },\n];\n\n// ── RSS Feeds ─────────────────────────────────────────────────────────────────\nconst RSS_SOURCES = [\n  { id: 'wwr-frontend',      url: 'https://weworkremotely.com/categories/remote-front-end-programming-jobs.rss' },\n  { id: 'wwr-backend',       url: 'https://weworkremotely.com/categories/remote-back-end-programming-jobs.rss' },\n  { id: 'wwr-fullstack',     url: 'https://weworkremotely.com/categories/remote-full-stack-programming-jobs.rss' },\n  { id: 'wwr-devops',        url: 'https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss' },\n  { id: 'remotive-sw-rss',   url: 'https://remotive.com/remote-jobs/feed/software-development' },\n  { id: 'remotive-ai-rss',   url: 'https://remotive.com/remote-jobs/feed/artificial-intelligence' },\n  { id: 'rfj-react',         url: 'https://remotefirstjobs.com/rss/jobs/react.rss' },\n  { id: 'rfj-python',        url: 'https://remotefirstjobs.com/rss/jobs/python.rss' },\n  { id: 'rfj-ai',            url: 'https://remotefirstjobs.com/rss/jobs/ai.rss' },\n  { id: 'larajobs',          url: 'https://larajobs.com/feed' },\n  { id: 'wp-jobs',           url: 'https://jobs.wordpress.net/feed/' },\n  { id: 'pyjobs',            url: 'https://www.pyjobs.com/rss' },\n  { id: 'python-org',        url: 'https://www.python.org/jobs/feed/rss/' },\n  { id: 'vuejobs',           url: 'https://app.vuejobs.com/feed/posts' },\n  { id: 'authenticjobs',     url: 'https://authenticjobs.com/?feed=job_feed' },\n  { id: 'realwork-frontend', url: 'https://www.realworkfromanywhere.com/remote-frontend-jobs/rss.xml' },\n];\n\nasync function fetchOne(src, isRss) {\n  try {\n    const res = await axios.get(src.url, {\n      timeout: 15000,\n      responseType: isRss ? 'text' : 'json',\n      headers: { 'User-Agent': 'Bugsy-JobBot/1.0' },\n    });\n    return { id: src.id, ok: true, data: res.data };\n  } catch (e) {\n    return { id: src.id, ok: false, data: null, error: e.message };\n  }\n}\n\nconst [jsonResults, rssResults] = await Promise.all([\n  Promise.all(JSON_SOURCES.map(s => fetchOne(s, false))),\n  Promise.all(RSS_SOURCES.map(s => fetchOne(s, true))),\n]);\n\nconst failed = [...jsonResults, ...rssResults].filter(r => !r.ok).map(r => r.id);\nreturn [{ json: { jsonResults, rssResults, failed } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-960, 0],
+      "position": [-1440, 0],
       "id": "jb-fetch",
       "name": "Fetch All Sources"
     },
@@ -28,17 +28,98 @@
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [-720, 0],
+      "position": [-1200, 0],
       "id": "jb-normalize",
       "name": "Normalize + Filter"
     },
     {
       "parameters": {
-        "jsCode": "const jobs = $input.first().json.jobs || [];\nif (jobs.length === 0) return [{ json: { sql: 'SELECT 1', total: 0 } }];\nfunction esc(v) { return String(v||'').replace(/'/g,\"''\"); }\nfunction escArr(a) { if (!a||!a.length) return \"'{}'\" ; return 'ARRAY['+a.map(t=>\"'\"+ esc(t)+\"'\").join(',')+']'; }\nconst rows = jobs.map(j=>`('${esc(j.source)}','${esc(j.title)}','${esc(j.company)}','${esc(j.url)}','${esc(j.location)}','${esc(j.salary_raw)}',${escArr(j.tech_tags)},'${esc(j.description)}',${j.posted_at?\"'\"+j.posted_at+\"'\":'NULL'})`);\nconst sql = 'INSERT INTO job_listings (source,title,company,url,location,salary_raw,tech_tags,description,posted_at)\\nVALUES\\n'+rows.join(',\\n')+'\\nON CONFLICT (url) DO NOTHING';\nreturn [{ json: { sql, total: jobs.length } }];"
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(array_agg(url), ARRAY[]::TEXT[]) AS urls FROM job_listings",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [-960, 0],
+      "id": "jb-existing-urls",
+      "name": "Get Existing URLs",
+      "credentials": { "postgres": { "id": "oZCyktBzxpp0w1k0", "name": "Postgres — agent DB" } }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Drop jobs whose URL is already stored — saves us scoring them again with the LLM.\nconst allJobs = $('Normalize + Filter').first().json.jobs || [];\nconst row = $input.first().json || {};\nconst urls = Array.isArray(row.urls) ? row.urls : (typeof row.urls === 'string' ? row.urls.replace(/^\\{|\\}$/g,'').split(',').filter(Boolean) : []);\nconst existing = new Set(urls);\nconst newJobs = allJobs.filter(j => !existing.has(j.url));\n// Stash the pre-score totals so the final summary can show what got filtered at each stage.\nreturn newJobs.map(j => ({ json: { ...j, _meta: { fetchedTotal: allJobs.length, alreadyStored: allJobs.length - newJobs.length, newCount: newJobs.length } } }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 0],
+      "id": "jb-filter-new",
+      "name": "Filter to New Jobs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Build the LiteLLM /v1/chat/completions payload for ONE job at a time.\n// System prompt encodes the boss's qualification profile + anti-profile. Update it\n// here when the criteria change — it's the single source of truth for fit scoring.\nconst job = $json;\n\nconst systemPrompt = [\n  'You are a strict hiring-fit scorer for Anthony Coffey, a senior full-stack developer.',\n  '',\n  'PROFILE — Anthony is highly qualified for:',\n  '- Full-stack web: React, Next.js, Node.js, TypeScript, JavaScript',\n  '- Mobile: React Native, Flutter, iOS, Android, Expo',\n  '- Backend: Node.js, Python, Express, FastAPI',\n  '- Cloud / infra: GCP, Firebase, Docker',\n  '- AI/ML INTEGRATION: LLM apps, RAG, OpenAI/Anthropic APIs, agent workflows, prompt eng',\n  '- Bonus: security-conscious environments (healthtech, fintech)',\n  '',\n  'ANTI-PROFILE — score these LOW (Anthony lacks significant experience):',\n  '- Java / Spring / Spring Boot',\n  '- C# / .NET / ASP.NET',\n  '- Salesforce, SAP, Oracle, COBOL, mainframe, AS/400',\n  '- Pure data engineering (Hadoop, Spark, Scala, Kafka-heavy)',\n  '- ML research roles (PyTorch / TensorFlow research, model training)',\n  '- Embedded / firmware / C / C++ / Rust systems',\n  '- DevOps-only / SRE-only roles requiring deep K8s expertise',\n  '- Financial analyst / quant / trader roles',\n  '- Pure design / UX roles',\n  '- Game dev (Unity, Unreal)',\n  '- Senior engineering manager / EM / director roles (Anthony is an IC)',\n  '',\n  'Respond with ONLY this JSON object, no commentary, no markdown fences:',\n  '{\"score\": <integer 0-100>, \"reason\": \"one short sentence, max 15 words\"}',\n  '',\n  'Rubric:',\n  '- 90-100: Strong direct match. Senior full-stack, AI integration, or React/RN/Flutter explicit.',\n  '- 75-89:  Solid fit. Most criteria match; minor gaps OK.',\n  '- 50-74:  Partial overlap but key skill mismatched (e.g. PHP/Laravel-heavy).',\n  '- 25-49:  Mostly outside profile (Java backend, .NET, etc.).',\n  '- 0-24:   Anti-profile (Spring Boot, Salesforce, financial analyst, etc.).',\n  '',\n  'Be honest. The boss only wants jobs he is likely to interview for.'\n].join('\\n');\n\nconst userPrompt = [\n  'Title: ' + (job.title || ''),\n  'Company: ' + (job.company || ''),\n  'Tags: ' + ((job.tech_tags || []).join(', ') || '—'),\n  'Description: ' + ((job.description || '').substring(0, 500)),\n  '',\n  'Score this job.'\n].join('\\n');\n\nreturn [{ json: {\n  job,\n  payload: {\n    model: 'claude-haiku-4-5',\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user',   content: userPrompt }\n    ],\n    temperature: 0.1,\n    max_tokens: 100\n  }\n}}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [-480, 0],
+      "id": "jb-build-score",
+      "name": "Build Score Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://litellm:4000/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.payload) }}",
+        "options": { "timeout": 30000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-240, 0],
+      "id": "jb-score",
+      "name": "Score Job",
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "httpHeaderAuth": { "id": "38AL9NfKmBOkT9bx", "name": "LiteLLM Bearer" }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse the LLM JSON. If anything goes sideways, score 0 with a parse-error reason —\n// these get dropped at the threshold step, so a flaky LLM call never poisons the table.\nconst llm = $json || {};\nconst job = $('Build Score Request').item.json.job;\nlet score = 0;\nlet reason = 'parse error';\ntry {\n  const content = (llm.choices && llm.choices[0] && llm.choices[0].message && llm.choices[0].message.content) || '';\n  const cleaned = content.replace(/^```(?:json)?\\s*/i, '').replace(/\\s*```\\s*$/i, '').trim();\n  const parsed = JSON.parse(cleaned);\n  const raw = parseInt(parsed.score, 10);\n  score = Number.isFinite(raw) ? Math.max(0, Math.min(100, raw)) : 0;\n  reason = String(parsed.reason || '').substring(0, 300);\n} catch (e) {\n  score = 0;\n  reason = 'parse error: ' + e.message;\n}\nreturn [{ json: Object.assign({}, job, { match_score: score, match_reason: reason, scored_at: new Date().toISOString() }) }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "jb-parse-score",
+      "name": "Parse Score"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Aggregate every scored job, apply the threshold, prep stats for the summary.\n// alwaysOutputData=true so a 0-new-jobs day still produces a single output item\n// (which keeps the rest of the chain alive and yields a 'nothing today' Slack note).\nconst THRESHOLD = 75;\nconst items = $input.all().map(i => i.json);\nconst kept = items.filter(j => (j.match_score || 0) >= THRESHOLD);\nconst dropped = items.filter(j => (j.match_score || 0) < THRESHOLD);\nkept.sort((a,b) => (b.match_score||0) - (a.match_score||0));\n\n// Pull pre-score stats off the first item if available — Filter to New Jobs\n// stamps fetchedTotal/alreadyStored/newCount onto each item via _meta.\nconst meta = (items[0] && items[0]._meta) || { fetchedTotal: 0, alreadyStored: 0, newCount: items.length };\n\n// Strip _meta off every job before they hit the SQL builder.\nconst clean = (j) => { const c = Object.assign({}, j); delete c._meta; return c; };\n\nreturn [{ json: {\n  kept: kept.map(clean),\n  droppedCount: dropped.length,\n  totalScored: items.length,\n  threshold: THRESHOLD,\n  fetchedTotal: meta.fetchedTotal,\n  alreadyStored: meta.alreadyStored,\n  topThree: kept.slice(0, 3).map(j => ({ title: j.title, company: j.company, score: j.match_score, reason: j.match_reason }))\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0],
+      "id": "jb-aggregate",
+      "name": "Aggregate Scored",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const { kept } = $input.first().json;\nif (!kept || kept.length === 0) return [{ json: { sql: 'SELECT 1', total: 0 } }];\nfunction esc(v) { return String(v||'').replace(/'/g,\"''\"); }\nfunction escArr(a) { if (!a||!a.length) return \"'{}'\" ; return 'ARRAY['+a.map(t=>\"'\"+ esc(t)+\"'\").join(',')+']'; }\nconst rows = kept.map(j=>`('${esc(j.source)}','${esc(j.title)}','${esc(j.company)}','${esc(j.url)}','${esc(j.location)}','${esc(j.salary_raw)}',${escArr(j.tech_tags)},'${esc(j.description)}',${j.posted_at?\"'\"+j.posted_at+\"'\":'NULL'},${parseInt(j.match_score,10)||0},'${esc(j.match_reason)}','${j.scored_at}')`);\nconst sql = 'INSERT INTO job_listings (source,title,company,url,location,salary_raw,tech_tags,description,posted_at,match_score,match_reason,scored_at)\\nVALUES\\n'+rows.join(',\\n')+'\\nON CONFLICT (url) DO NOTHING';\nreturn [{ json: { sql, total: kept.length } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [480, 0],
       "id": "jb-sql",
       "name": "Prepare Insert SQL"
     },
@@ -46,18 +127,18 @@
       "parameters": { "operation": "executeQuery", "query": "={{ $json.sql }}", "options": {} },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.5,
-      "position": [-240, 0],
+      "position": [720, 0],
       "id": "jb-postgres",
       "name": "Upsert to Postgres",
       "credentials": { "postgres": { "id": "oZCyktBzxpp0w1k0", "name": "Postgres — agent DB" } }
     },
     {
       "parameters": {
-        "jsCode": "const total = $('Prepare Insert SQL').first().json.total || 0;\nconst date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });\nreturn [{ json: { slackText: `📋 *Job Board Sweep — ${date}*\\n*${total} new remote jobs* pulled from 20+ niche boards and stored.\\nBrowse 'em: <https://n8n.coffey.codes/webhook/job-board|coffey.codes job board>` } }];"
+        "jsCode": "const agg = $('Aggregate Scored').first().json;\nconst inserted = $('Prepare Insert SQL').first().json.total || 0;\nconst date = new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });\nconst threshold = agg.threshold || 75;\nconst topLines = (agg.topThree || []).map(t => `• *${t.score}* — ${t.title} @ ${t.company || '?'}`).join('\\n');\nconst topBlock = topLines ? `\\n\\n*Top picks:*\\n${topLines}` : '';\nconst slackText = `📋 *Job Board Sweep — ${date}*\\n*${inserted} new jobs* cleared the ${threshold} fit score (out of ${agg.totalScored||0} scored, ${agg.droppedCount||0} dropped).\\n_Pre-score: ${agg.fetchedTotal||0} fetched, ${agg.alreadyStored||0} already stored._\\nBrowse 'em: <https://n8n.coffey.codes/webhook/job-board|coffey.codes job board>${topBlock}`;\nreturn [{ json: { slackText } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [0, 0],
+      "position": [960, 0],
       "id": "jb-summary",
       "name": "Format Slack Summary"
     },
@@ -70,7 +151,7 @@
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
-      "position": [240, 0],
+      "position": [1200, 0],
       "id": "jb-slack",
       "name": "Send to Mulberry Street",
       "credentials": { "slackApi": { "id": "TIP9AbQBq7X5Qidd", "name": "Slack - Bugsy" } }
@@ -78,12 +159,18 @@
   ],
   "pinData": {},
   "connections": {
-    "Schedule Trigger":    { "main": [[{"node": "Fetch All Sources",    "type": "main", "index": 0}]] },
-    "Fetch All Sources":   { "main": [[{"node": "Normalize + Filter",   "type": "main", "index": 0}]] },
-    "Normalize + Filter":  { "main": [[{"node": "Prepare Insert SQL",   "type": "main", "index": 0}]] },
-    "Prepare Insert SQL":  { "main": [[{"node": "Upsert to Postgres",   "type": "main", "index": 0}]] },
-    "Upsert to Postgres":  { "main": [[{"node": "Format Slack Summary", "type": "main", "index": 0}]] },
-    "Format Slack Summary":{ "main": [[{"node": "Send to Mulberry Street","type": "main", "index": 0}]] }
+    "Schedule Trigger":      { "main": [[{"node": "Fetch All Sources",      "type": "main", "index": 0}]] },
+    "Fetch All Sources":     { "main": [[{"node": "Normalize + Filter",     "type": "main", "index": 0}]] },
+    "Normalize + Filter":    { "main": [[{"node": "Get Existing URLs",      "type": "main", "index": 0}]] },
+    "Get Existing URLs":     { "main": [[{"node": "Filter to New Jobs",     "type": "main", "index": 0}]] },
+    "Filter to New Jobs":    { "main": [[{"node": "Build Score Request",    "type": "main", "index": 0}]] },
+    "Build Score Request":   { "main": [[{"node": "Score Job",              "type": "main", "index": 0}]] },
+    "Score Job":             { "main": [[{"node": "Parse Score",            "type": "main", "index": 0}]] },
+    "Parse Score":           { "main": [[{"node": "Aggregate Scored",       "type": "main", "index": 0}]] },
+    "Aggregate Scored":      { "main": [[{"node": "Prepare Insert SQL",     "type": "main", "index": 0}]] },
+    "Prepare Insert SQL":    { "main": [[{"node": "Upsert to Postgres",     "type": "main", "index": 0}]] },
+    "Upsert to Postgres":    { "main": [[{"node": "Format Slack Summary",   "type": "main", "index": 0}]] },
+    "Format Slack Summary":  { "main": [[{"node": "Send to Mulberry Street","type": "main", "index": 0}]] }
   },
   "active": false,
   "settings": { "executionOrder": "v1" }
