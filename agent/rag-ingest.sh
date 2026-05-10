@@ -36,7 +36,7 @@ for category in bio articles case-studies projects; do
     else
       echo "FAILED (HTTP $http_code): $body"
     fi
-  done < <(find "$dir" -type f -name '*.md' -print0 | sort -z)
+  done < <(find -L "$dir" -type f -name '*.md' -print0 | sort -z)
 done
 
 echo "Done."

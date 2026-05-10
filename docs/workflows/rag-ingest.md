@@ -52,10 +52,36 @@ docker run --rm --network agent_agent-net curlimages/curl:latest \
 ~/agent/rag/bio/            # resume, about-me, skills
 ~/agent/rag/articles/       # written/edited articles in your voice
 ~/agent/rag/case-studies/   # client work writeups
-~/agent/rag/projects/       # project descriptions
+~/agent/rag/projects/       # project descriptions and source-repo doc trees
 ```
 
 `*.md` is gitignored — content stays private.
+
+## Cloning source repos for git-pull refresh
+
+The ingest script walks subdirectories recursively (`find -L`) and follows symlinks, so any cloned repo's `docs/` tree can plug straight in. Pattern:
+
+```bash
+# 1. Clone the repo somewhere stable on the VM
+git clone --depth=1 https://github.com/anthonycoffey/<repo>.git ~/<repo>
+
+# 2. Symlink its docs into the right RAG category
+ln -s ~/<repo>/docs ~/agent/rag/projects/<repo>
+
+# 3. Ingest
+bash ~/agent/rag-ingest.sh projects
+```
+
+Refresh later with:
+
+```bash
+cd ~/<repo> && git pull
+bash ~/agent/rag-ingest.sh projects
+```
+
+Idempotency means re-ingesting the same files just overwrites their existing chunks (point IDs are deterministic from `doc_id + chunk_index`). New files are added; renamed files create new chunks at the new path and orphan the old ones — purge those manually if cleanliness matters.
+
+Currently mounted this way: `~/agent/rag/projects/coffey-codes` → `~/coffey.codes/docs` (46 docs).
 
 ## Title resolution
 
