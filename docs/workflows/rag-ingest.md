@@ -18,9 +18,9 @@ flowchart LR
   U --> R[Respond]
 ```
 
-- **Parse & Chunk** — strips YAML frontmatter, extracts `title` + `tags`, slices the body into ~400-char chunks with 50-char overlap. Emits one item per chunk.
+- **Parse & Chunk** — strips YAML frontmatter, resolves a `title` (frontmatter `title:` → first `# H1` → `filename` → `Untitled`), extracts `tags`, slices the body into ~400-char chunks with 50-char overlap. Emits one item per chunk.
 - **Embed (Ollama)** — runs `nomic-embed-text` per chunk. Native HTTP Request node so n8n iterates per item automatically.
-- **Build Points** — pairs each embedding with its source chunk metadata; UUIDs are deterministic from `title + chunk_index`.
+- **Build Points** — pairs each embedding with its source chunk metadata; UUIDs are deterministic from `doc_id + chunk_index` where `doc_id` is the relative `filename` (rename-safe and collision-free across repos), falling back to `title` for legacy callers.
 - **Upsert (Qdrant)** — single PUT with the full point array.
 - **Respond** — `✓ N chunks stored — <title>` or an error message with stage info.
 
@@ -57,7 +57,16 @@ docker run --rm --network agent_agent-net curlimages/curl:latest \
 
 `*.md` is gitignored — content stays private.
 
-## Frontmatter
+## Title resolution
+
+The parser tries each source in order and uses the first one that yields a non-empty value:
+
+1. **YAML frontmatter `title:`** — explicit, wins.
+2. **First `# H1` heading** in the body — works for any well-formed markdown.
+3. **`filename`** sent in the request body (relative path like `projects/_agent/architecture/overview.md`).
+4. **`"Untitled"`** — only if everything above is missing.
+
+This means most repos can be ingested as-is — no per-file frontmatter required. Add frontmatter when you want to override the H1 or specify `tags`:
 
 ```markdown
 ---
@@ -68,11 +77,14 @@ tags: [resume, react, node, typescript]
 Body here.
 ```
 
-`title` becomes the document's UUID seed and the value shown in `sources` from the query workflow. **Titles must be unique across the whole collection.**
-
 ## Idempotency
 
-Re-running ingest on the same file overwrites those chunks because UUIDs are deterministic from `title + chunk_index`. Edit the file, re-run ingest, the existing points get updated rather than duplicated.
+Each chunk's Qdrant point ID is deterministic from `doc_id + chunk_index`, where `doc_id` is the request `filename` (preferred — rename-safe, collision-free across repos) or the title for legacy callers without a filename. Editing a file and re-running ingest overwrites its existing chunks rather than duplicating them.
+
+**Two collisions to know about:**
+
+- **Same filename in different categories** — won't collide because `rag-ingest.sh` sends `filename` as `<category>/<relative-path>`.
+- **Same H1 in two repos** — only matters if neither file has frontmatter *and* neither caller sends a filename. The default script always sends a filename, so this only bites direct webhook callers.
 
 **Caveat:** if the doc shrinks (fewer chunks than before), trailing chunks from the previous version stay orphaned in Qdrant. Worth pruning manually if you regularly shorten docs:
 

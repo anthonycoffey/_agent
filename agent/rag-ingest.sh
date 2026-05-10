@@ -28,7 +28,7 @@ for category in bio articles case-studies projects; do
     echo -n "→ $category/$rel ... "
     response=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK" \
       -H "Content-Type: application/json" \
-      -d "{\"category\":\"$category\",\"content\":$(jq -Rs . < "$f")}")
+      -d "{\"category\":\"$category\",\"filename\":\"$category/$rel\",\"content\":$(jq -Rs . < "$f")}")
     http_code=$(echo "$response" | tail -1)
     body=$(echo "$response" | head -1)
     if [ "$http_code" = "200" ]; then
