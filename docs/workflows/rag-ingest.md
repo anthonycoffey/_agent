@@ -1,3 +1,8 @@
+---
+title: Bugsy RAG Ingest Workflow
+tags: [bugsy, rag, ingest, qdrant, ollama, nomic-embed-text, n8n, embeddings]
+---
+
 # RAG ingest
 
 `agent/n8n/workflows/bugsy-rag-ingest.json` — turns markdown documents into Qdrant vector points.

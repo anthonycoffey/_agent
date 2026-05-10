@@ -23,9 +23,9 @@ for category in bio articles case-studies projects; do
   dir="$RAG_DIR/$category"
   [ -d "$dir" ] || continue
 
-  for f in "$dir"/*.md; do
-    [ -f "$f" ] || continue
-    echo -n "→ $(basename "$f") ... "
+  while IFS= read -r -d '' f; do
+    rel="${f#$dir/}"
+    echo -n "→ $category/$rel ... "
     response=$(curl -s -w "\n%{http_code}" -X POST "$WEBHOOK" \
       -H "Content-Type: application/json" \
       -d "{\"category\":\"$category\",\"content\":$(jq -Rs . < "$f")}")
@@ -36,7 +36,7 @@ for category in bio articles case-studies projects; do
     else
       echo "FAILED (HTTP $http_code): $body"
     fi
-  done
+  done < <(find "$dir" -type f -name '*.md' -print0 | sort -z)
 done
 
 echo "Done."

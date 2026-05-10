@@ -1,3 +1,8 @@
+---
+title: Bugsy Job Board Workflow
+tags: [bugsy, job-board, llm-fit-score, n8n, workflow, postgres, slack]
+---
+
 # Job board
 
 Two workflows that work together to surface remote dev jobs the boss is actually

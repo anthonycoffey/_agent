@@ -1,3 +1,8 @@
+---
+title: Bugsy Troubleshooting
+tags: [bugsy, troubleshooting, incidents, n8n, docker, debugging]
+---
+
 # Troubleshooting
 
 Living list of "this happened, here's the fix." Mostly cribbed from `logs/incident-log.md`.

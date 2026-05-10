@@ -1,3 +1,8 @@
+---
+title: Bugsy RAG Query Workflow
+tags: [bugsy, rag, query, retrieval, qdrant, n8n, http, api]
+---
+
 # RAG query (programmatic)
 
 `agent/n8n/workflows/bugsy-rag-query.json` — JSON-over-HTTP endpoint for RAG-grounded answers. **Use this for testing, scripts, and non-Slack integrations.** The unified Bugsy workflow is the right entry point for human chat (it has memory; this one doesn't).

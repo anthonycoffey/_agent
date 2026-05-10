@@ -1,3 +1,8 @@
+---
+title: Bugsy Webhooks
+tags: [bugsy, webhooks, n8n, cloudflare-tunnel, http, api]
+---
+
 # Webhooks
 
 All webhooks are exposed via Cloudflare Tunnel at `https://n8n.coffey.codes/webhook/<path>`.

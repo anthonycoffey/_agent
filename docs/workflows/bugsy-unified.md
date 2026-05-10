@@ -1,3 +1,8 @@
+---
+title: Bugsy Unified Workflow
+tags: [bugsy, n8n, workflow, slack, telegram, whatsapp, chat, agent]
+---
+
 # Bugsy (unified)
 
 `agent/n8n/workflows/bugsy.json` — single workflow that handles every Bugsy-as-assistant surface.

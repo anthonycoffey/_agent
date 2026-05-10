@@ -1,3 +1,8 @@
+---
+title: Bugsy Networking
+tags: [bugsy, networking, cloudflare-tunnel, tailscale, ssh, ingress]
+---
+
 # Networking
 
 ## No public IP

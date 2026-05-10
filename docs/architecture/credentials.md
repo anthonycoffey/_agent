@@ -1,3 +1,8 @@
+---
+title: Bugsy Credentials & Secrets
+tags: [bugsy, credentials, secrets, env, terraform, n8n]
+---
+
 # Credentials & secrets
 
 ## Where secrets live

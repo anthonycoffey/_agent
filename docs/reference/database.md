@@ -1,3 +1,8 @@
+---
+title: Bugsy Databases
+tags: [bugsy, postgres, qdrant, redis, pgvector, schema, database]
+---
+
 # Databases
 
 ## Postgres (`agent-postgres`)

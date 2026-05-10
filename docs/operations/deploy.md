@@ -1,3 +1,8 @@
+---
+title: Bugsy Deployment
+tags: [bugsy, deploy, ops, git, docker-compose, n8n-import, terraform]
+---
+
 # Deploying changes
 
 Three kinds of changes, three deploy paths.

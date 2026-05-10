@@ -1,3 +1,8 @@
+---
+title: Bugsy n8n Workflow Import
+tags: [bugsy, n8n, workflows, import, deploy, ops]
+---
+
 # n8n workflow import
 
 The n8n DB is the source of truth for what's running. The repo's JSON files are the source of truth for what's *intended* to run. Keep them in sync.

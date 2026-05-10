@@ -1,3 +1,8 @@
+---
+title: Bugsy Architecture Overview
+tags: [bugsy, architecture, gcp, docker, vm, single-vm, cloudflare-tunnel]
+---
+
 # Overview
 
 Bugsy is a single-VM stack. One Compute Engine instance on GCP runs Docker Compose with all services. Internal services talk over a private docker network (`agent_agent-net`). Only Cloudflare Tunnel exposes anything to the internet.
