@@ -107,17 +107,20 @@ _agent/
 All workflow JSON files live in `agent/n8n/workflows/`. After pushing changes, they must be
 manually re-imported into n8n via the UI (Import from URL using the GitHub raw URL).
 
-| File | Status | Purpose |
+All eight currently in the repo are active in n8n. Per-workflow narrative + auto-generated node reference lives at `docs/workflows/<basename>.md`.
+
+| File | Trigger | Purpose |
 |---|---|---|
-| `bugsy-job-board-fetcher.json` | Active | Daily cron (5:30am CT, M-F): fetches 20+ job boards, dedupes against DB, **LLM-scores all new jobs in one batched haiku-4-5 call (1→1 along the score path; per-item iteration silently dropped items in n8n), only inserts score ≥75**, posts Slack summary with top picks. Threshold is `THRESHOLD` const in *Aggregate Scored* node; criteria in *Build Score Request* system prompt; 100-job batch cap, remainder defers to next day. |
-| `bugsy-job-board-ui.json` | Active | Webhook GET `/job-board`: dark-mode HTML board, default sort = best fit first, min-score slider (default 75), score badge + LLM rationale on every row. `https://n8n.coffey.codes/webhook/job-board` |
-| `bugsy-rag-ingest.json` | Active | Webhook POST `/rag-ingest`: receives `{category, content}`, parses YAML frontmatter, chunks text (~400 chars, 50 overlap), embeds via Ollama `nomic-embed-text`, upserts to Qdrant `personal_knowledge` collection |
-| `bugsy-chat.json` | Unknown | Bugsy chat interface |
-| `bugsy-inbox-watcher.json` | Unknown | Email inbox monitoring |
-| `bugsy-leads-hunter.json` | Unknown | Lead generation pipeline |
-| `bugsy-research.json` | Unknown | Research/SearXNG workflow |
-| `bugsy-events.json` | Unknown | Events workflow |
-| `bugsy-whatsapp.json` | Unknown | WhatsApp via Evolution API |
+| `bugsy.json` | webhook `/slack-bugsy` (events) + `/ask` (slash) | Unified Slack assistant — DMs, @mentions, `/ask` slash. Memory (Postgres chat) + RAG (Qdrant) injection. |
+| `bugsy-job-board-fetcher.json` | cron 5:30 CT M-F | Fetches 20+ job boards, batched haiku-4-5 fit-scoring (≥75 threshold), inserts to `job_listings`, Slack summary. |
+| `bugsy-job-board-ui.json` | webhook GET `/job-board` | Dark-mode HTML board over `job_listings`. Default sort = best fit; min-score slider; row badges. |
+| `bugsy-rag-ingest.json` | webhook POST `/rag-ingest` | Markdown → chunks → Ollama embed → Qdrant. Title fallback (frontmatter → H1 → filename). `onError: continueRegularOutput` on the embed step so a single chunk timeout doesn't kill the run. |
+| `bugsy-rag-query.json` | webhook POST `/rag-query` | JSON-in/JSON-out RAG endpoint, no memory. `top_k` default 15. |
+| `bugsy-leads-hunter.json` | cron 6:00 CT M-F | 12 SearXNG queries → dedupe → batched scoring → top 5 to `agent.leads` + Slack DM. |
+| `bugsy-research.json` | webhook POST `/bugsy-research` (`/research <target>`) | On-demand prospect brief; SearXNG + homepage fetch → haiku-4-5 → DM the boss, optional Gmail draft. |
+| `bugsy-inbox-watcher.json` | Gmail trigger | Classifies inbound mail (important / needs_reply / scheduling / promo), labels, drafts replies, pings Slack. Currently inactive in n8n. |
+
+The earlier per-surface Slack flows (`bugsy-chat.json`, `bugsy-events.json`, `bugsy-slack-rag.json`) and `bugsy-whatsapp.json` were rolled into the unified workflow / removed; see `git log --diff-filter=D -- agent/n8n/workflows/` for their historical shapes.
 
 ---
 

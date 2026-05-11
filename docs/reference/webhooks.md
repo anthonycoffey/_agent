@@ -7,8 +7,6 @@ tags: [bugsy, webhooks, n8n, cloudflare-tunnel, http, api]
 
 All webhooks are exposed via Cloudflare Tunnel at `https://n8n.coffey.codes/webhook/<path>`.
 
-Only workflows currently active in n8n are listed first. Inactive paths follow in their own section so the live-state and the historical shape are both visible.
-
 | Path | Method | Workflow | Caller | Notes |
 |---|---|---|---|---|
 | `/slack-bugsy` | POST | `bugsy.json` (unified) | Slack Event API | DMs + @mentions. Handles URL-verification challenge. |
@@ -20,13 +18,6 @@ Only workflows currently active in n8n are listed first. Inactive paths follow i
 
 Cron- and Gmail-triggered active workflows (`bugsy-job-board-fetcher`, `bugsy-leads-hunter`) have no inbound webhook — see each workflow's doc page for trigger details.
 
-### Inactive webhooks (historical reference)
-
-| Path | Workflow | Why inactive |
-|---|---|---|
-| `/slack-bugsy` (formerly) | `bugsy-events.json` | Superseded by the unified workflow. |
-| `/bugsy-cmd` | `bugsy-chat.json` | Slash command re-pointed at `/ask`; persona chat now lives in the unified workflow. |
-| `/bugsy-wa` | `bugsy-whatsapp.json` | WhatsApp surface not currently running. |
 
 ## Payload examples
 

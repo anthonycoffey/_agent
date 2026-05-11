@@ -18,7 +18,7 @@ All three reach the same AI Agent with the same memory store and the same RAG pi
 
 ## Activation status
 
-The unified workflow is **active** in n8n. It owns `/slack-bugsy` (DMs + @mentions) and `/ask` (slash command). The predecessor flows ([`bugsy-events`](bugsy-events.md), [`bugsy-chat`](bugsy-chat.md)) are deactivated; their JSON files stay in the repo as historical reference.
+The unified workflow is **active** in n8n. It owns `/slack-bugsy` (DMs + @mentions) and `/ask` (slash command). Earlier per-surface predecessors (`bugsy-events.json`, `bugsy-chat.json`, `bugsy-slack-rag.json`) have been removed from the repo — see the predecessors note below.
 
 ## Pipeline
 
@@ -79,18 +79,17 @@ This is the bulletproof path because the langchain agent's `systemMessage` field
 
 The system prompt is purely static persona + an instruction explaining the structured sections.
 
-## Predecessors
+## Predecessors (removed from repo)
 
-The unified workflow consolidates two earlier ones that remain in the repo as historical reference:
+The unified workflow replaced three earlier per-surface flows:
 
-| Predecessor | What it did | Doc |
-|---|---|---|
-| `bugsy-events.json` | Slack DMs/mentions, memory, no RAG | [bugsy-events](bugsy-events.md) |
-| `bugsy-chat.json` | `/bugsy` slash command, persona only | [bugsy-chat](bugsy-chat.md) |
+| Predecessor | What it did |
+|---|---|
+| `bugsy-events.json` | Slack DMs/mentions, memory, no RAG |
+| `bugsy-chat.json` | `/bugsy` slash command, persona only |
+| `bugsy-slack-rag.json` | `/slack-rag` slash command, RAG, no memory |
 
-Both are deactivated in n8n — the unified workflow took over their surfaces (`/slack-bugsy` directly; `/bugsy` was re-pointed at `/ask` in the Slack app config).
-
-> A third predecessor, `bugsy-slack-rag.json`, has been removed from the repo. It was a one-shot RAG slash command without memory — superseded by the unified workflow's RAG pre-injection.
+All three have been deleted from the repo — the unified workflow consolidates their surfaces with memory + RAG injection in one place. Look at git history (`git log --diff-filter=D -- agent/n8n/workflows/`) if you want to see their historical shapes.
 
 ## See also
 

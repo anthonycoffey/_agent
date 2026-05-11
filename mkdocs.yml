@@ -79,9 +79,6 @@ nav:
       - workflows/job-board.md
       - workflows/rag-ingest.md
       - workflows/rag-query.md
-      - workflows/bugsy-chat.md
-      - workflows/bugsy-events.md
-      - workflows/bugsy-whatsapp.md
       - workflows/bugsy-inbox-watcher.md
       - workflows/bugsy-leads-hunter.md
       - workflows/bugsy-research.md
