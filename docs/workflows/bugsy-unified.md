@@ -16,10 +16,6 @@ n8n_workflows: [bugsy]
 
 All three reach the same AI Agent with the same memory store and the same RAG pipeline. Only the entry parser and the reply transport differ.
 
-## Activation status
-
-The unified workflow is **active** in n8n. It owns `/slack-bugsy` (DMs + @mentions) and `/ask` (slash command). Earlier per-surface predecessors (`bugsy-events.json`, `bugsy-chat.json`, `bugsy-slack-rag.json`) have been removed from the repo — see the predecessors note below.
-
 ## Pipeline
 
 ```mermaid
@@ -78,18 +74,6 @@ tell me about my expertise
 This is the bulletproof path because the langchain agent's `systemMessage` field doesn't reliably evaluate `$json` or `$('NodeName')` expressions in this n8n version — putting dynamic content in `chatInput` guarantees the LLM sees it.
 
 The system prompt is purely static persona + an instruction explaining the structured sections.
-
-## Predecessors (removed from repo)
-
-The unified workflow replaced three earlier per-surface flows:
-
-| Predecessor | What it did |
-|---|---|
-| `bugsy-events.json` | Slack DMs/mentions, memory, no RAG |
-| `bugsy-chat.json` | `/bugsy` slash command, persona only |
-| `bugsy-slack-rag.json` | `/slack-rag` slash command, RAG, no memory |
-
-All three have been deleted from the repo — the unified workflow consolidates their surfaces with memory + RAG injection in one place. Look at git history (`git log --diff-filter=D -- agent/n8n/workflows/`) if you want to see their historical shapes.
 
 ## See also
 
