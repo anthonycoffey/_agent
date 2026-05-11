@@ -26,7 +26,7 @@ The bearer token for LiteLLM is stored as a `Header Auth` credential named `Lite
 |---|---|---|
 | `Slack - Bugsy` | Slack API | `bugsy.json`, `bugsy-events`, `bugsy-inbox-watcher`, `bugsy-job-board-fetcher`, `bugsy-leads-hunter`, `bugsy-research` |
 | `LiteLLM - local proxy` | OpenAI API | LangChain `openAi` nodes — `bugsy.json`, `bugsy-chat`, `bugsy-events`, `bugsy-inbox-watcher`, `bugsy-leads-hunter`, `bugsy-research`, `bugsy-whatsapp` |
-| `LiteLLM Bearer` | Header Auth | Raw HTTP calls to LiteLLM — `bugsy-job-board-fetcher`, `bugsy-rag-query`, `bugsy-slack-rag` (legacy) |
+| `LiteLLM Bearer` | Header Auth | Raw HTTP calls to LiteLLM — `bugsy-job-board-fetcher`, `bugsy-rag-query` |
 | `Postgres — agent DB` | Postgres | App data — `bugsy-job-board-fetcher`, `bugsy-job-board-ui`, `bugsy-leads-hunter` |
 | `Postgres - Memory database` | Postgres | LangChain Postgres Chat Memory — `bugsy.json`, `bugsy-events` |
 | `Gmail - Bugsy (anthony@coffey.codes)` | Gmail OAuth2 | `bugsy-inbox-watcher`, `bugsy-research` |

@@ -12,7 +12,6 @@ All webhooks are exposed via Cloudflare Tunnel at `https://n8n.coffey.codes/webh
 | `/slack-bugsy` | POST | `bugsy-events.json` (active) **or** `bugsy.json` (unified) | Slack Event API | DMs + @mentions. Handles URL-verification challenge. Path collides between the two — only one can be active at a time. |
 | `/ask` | POST | `bugsy.json` (unified) | Slack slash command `/ask` | ACKs immediately, replies async via `response_url`. |
 | `/bugsy-cmd` | POST | `bugsy-chat.json` | Slack slash command `/bugsy` | Stateless persona chat. ACKs immediately. |
-| `/slack-rag` | POST | `bugsy-slack-rag.json` (legacy) | Slack slash command | RAG one-shot, no memory. Predecessor to the unified workflow. |
 | `/rag-query` | POST | `bugsy-rag-query.json` | Scripts, testing | JSON-API. No memory. See [RAG query](../workflows/rag-query.md). |
 | `/rag-ingest` | POST | `bugsy-rag-ingest.json` | `rag-ingest.sh` | Pushes a markdown doc into Qdrant. |
 | `/job-board` | GET | `bugsy-job-board-ui.json` | Browser | HTML view of the job listings table. |

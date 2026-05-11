@@ -80,7 +80,6 @@ nav:
       - workflows/rag-ingest.md
       - workflows/rag-query.md
       - workflows/bugsy-chat.md
-      - workflows/bugsy-slack-rag.md
       - workflows/bugsy-events.md
       - workflows/bugsy-whatsapp.md
       - workflows/bugsy-inbox-watcher.md
