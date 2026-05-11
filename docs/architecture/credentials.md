@@ -24,9 +24,13 @@ The bearer token for LiteLLM is stored as a `Header Auth` credential named `Lite
 
 | Name | Type | Used by |
 |---|---|---|
-| `Slack - Bugsy` | Slack API | events workflow, unified workflow |
-| `LiteLLM - local proxy` | OpenAI API | langchain Chat Model nodes |
-| `LiteLLM Bearer` | Header Auth | `bugsy-rag-query`, `bugsy-slack-rag` (legacy) |
-| `Postgres - Memory database` | Postgres | langchain Postgres Chat Memory nodes |
+| `Slack - Bugsy` | Slack API | `bugsy.json`, `bugsy-events`, `bugsy-inbox-watcher`, `bugsy-job-board-fetcher`, `bugsy-leads-hunter`, `bugsy-research` |
+| `LiteLLM - local proxy` | OpenAI API | LangChain `openAi` nodes — `bugsy.json`, `bugsy-chat`, `bugsy-events`, `bugsy-inbox-watcher`, `bugsy-leads-hunter`, `bugsy-research`, `bugsy-whatsapp` |
+| `LiteLLM Bearer` | Header Auth | Raw HTTP calls to LiteLLM — `bugsy-job-board-fetcher`, `bugsy-rag-query`, `bugsy-slack-rag` (legacy) |
+| `Postgres — agent DB` | Postgres | App data — `bugsy-job-board-fetcher`, `bugsy-job-board-ui`, `bugsy-leads-hunter` |
+| `Postgres - Memory database` | Postgres | LangChain Postgres Chat Memory — `bugsy.json`, `bugsy-events` |
+| `Gmail - Bugsy (anthony@coffey.codes)` | Gmail OAuth2 | `bugsy-inbox-watcher`, `bugsy-research` |
 
-Credential IDs are referenced inside the workflow JSON files. If you re-create a credential, you must also update the JSON to point at the new ID.
+Credential IDs are referenced inside the workflow JSON files. If you re-create a credential, you must also update the JSON to point at the new ID (or re-pick it from each node's credential dropdown in the n8n UI).
+
+The same `LiteLLM - local proxy` credential is reused everywhere a LangChain `openAi` node is used. The bearer-auth variant (`LiteLLM Bearer`) exists for raw `HTTP Request` nodes that hit `http://litellm:4000/v1/chat/completions` directly — they can't use the OpenAI-API credential type. Both wrap the same underlying `WEBUI_SECRET_KEY` value from `agent/.env`.

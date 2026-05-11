@@ -40,3 +40,18 @@ docker exec agent-postgres psql -U $POSTGRES_USER -d n8n -c \
 ## Authoring rules
 
 n8n's workflow JSON format is undocumented and changes between versions. Don't invent node shapes from training data. Copy node shapes from existing committed workflows in `agent/n8n/workflows/`. If a node type doesn't exist in any committed workflow yet, add it once in the UI, export, share — then it can be reused.
+
+## Keep the docs in sync
+
+Every workflow has an accompanying page under `docs/workflows/` with two parts:
+
+1. **Hand-written summary** — what the workflow does and why.
+2. **`## Node reference` block** — auto-generated from the JSON, delimited by `<!-- NODE-REF:START:<basename> -->...<!-- NODE-REF:END:<basename> -->` markers.
+
+After any workflow JSON change, regenerate the reference blocks so the docs stay accurate:
+
+```bash
+node agent/n8n/scripts/generate-workflow-reference.mjs
+```
+
+The generator only touches content between the markers — narrative text outside them is preserved. Doc ownership is declared via frontmatter `n8n_workflows: [<basename>]`; workflows not yet claimed by a doc get a stub auto-created at `docs/workflows/<basename>.md`. Add a new entry to the `nav:` block in `mkdocs.yml` if the generator creates a new doc.

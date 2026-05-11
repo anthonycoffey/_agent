@@ -32,6 +32,13 @@ n8n stores workflows in its Postgres DB; file changes don't auto-apply. Re-impor
 5. **Save** (Ctrl+S) — easy to miss, import alone doesn't persist
 6. Toggle **Active** if it deactivated itself
 
+After editing any workflow JSON, refresh the auto-generated node-reference docs from the local dev machine so they stay in sync:
+
+```bash
+node agent/n8n/scripts/generate-workflow-reference.mjs
+git add docs/workflows && git commit -m "docs: refresh node reference"
+```
+
 See [n8n import workflow](n8n-import.md) for tips on avoiding common pitfalls (path collisions, duplicate workflows, credential references).
 
 ## Terraform / infrastructure changes

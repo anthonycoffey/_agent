@@ -6,7 +6,7 @@ n8n_workflows: [bugsy]
 
 # Bugsy (unified)
 
-`agent/n8n/workflows/bugsy.json` — single workflow that handles every Bugsy-as-assistant surface.
+`agent/n8n/workflows/bugsy.json` — single workflow intended to handle every Bugsy-as-assistant Slack surface in one place.
 
 ## Surfaces
 
@@ -15,6 +15,10 @@ n8n_workflows: [bugsy]
 - `/ask` slash command — webhook `/ask`
 
 All three reach the same AI Agent with the same memory store and the same RAG pipeline. Only the entry parser and the reply transport differ.
+
+## Activation status
+
+The unified workflow is in the repo but **not yet activated in n8n** — Slack DMs/@mentions still flow through the predecessor [`bugsy-events`](bugsy-events.md). Activating `bugsy` requires deactivating `bugsy-events` first, since both claim `/slack-bugsy` and n8n will refuse a path collision. Same goes for the slash-command paths: `bugsy-chat` (`/bugsy-cmd`) and `bugsy-slack-rag` (`/slack-rag`) will keep serving their respective slash commands until you point those commands at `/ask` in Slack's app config and activate this workflow.
 
 ## Pipeline
 
@@ -75,17 +79,17 @@ This is the bulletproof path because the langchain agent's `systemMessage` field
 
 The system prompt is purely static persona + an instruction explaining the structured sections.
 
-## Predecessors (retired)
+## Predecessors
 
-This workflow replaces three earlier ones:
+The unified workflow consolidates three earlier ones that are still in the repo (and currently still serving their respective surfaces in n8n):
 
-| Old | What it did |
-|---|---|
-| `bugsy-events.json` | Slack DMs/mentions, memory, no RAG |
-| `bugsy-chat.json` | Slash command, memory, no RAG |
-| `bugsy-slack-rag.json` | Slash command, RAG, no memory |
+| Predecessor | What it does | Doc |
+|---|---|---|
+| `bugsy-events.json` | Slack DMs/mentions, memory, no RAG | [bugsy-events](bugsy-events.md) |
+| `bugsy-chat.json` | `/bugsy` slash command, persona only | [bugsy-chat](bugsy-chat.md) |
+| `bugsy-slack-rag.json` | `/slack-rag` slash command, RAG, no memory | [bugsy-slack-rag](bugsy-slack-rag.md) |
 
-Keep them archived for reference but deactivate before activating this one (webhook path conflicts).
+When you activate the unified workflow, deactivate all three predecessors first — their webhook paths overlap (`/slack-bugsy` directly; `/bugsy-cmd` and `/slack-rag` indirectly once you re-point the Slack app's slash commands at `/ask`).
 
 ## See also
 

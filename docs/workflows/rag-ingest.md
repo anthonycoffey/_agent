@@ -116,11 +116,11 @@ Each chunk's Qdrant point ID is deterministic from `doc_id + chunk_index`, where
 **Caveat:** if the doc shrinks (fewer chunks than before), trailing chunks from the previous version stay orphaned in Qdrant. Worth pruning manually if you regularly shorten docs:
 
 ```bash
-# delete chunks for a title where chunk_index >= new total
+# delete chunks for a filename where chunk_index >= new total
 docker run --rm --network agent_agent-net curlimages/curl:latest \
   -s -X POST http://agent-qdrant:6333/collections/personal_knowledge/points/delete \
   -H "Content-Type: application/json" \
-  -d '{"filter":{"must":[{"key":"title","match":{"value":"My Resume"}},{"key":"chunk_index","range":{"gte":15}}]}}'
+  -d '{"filter":{"must":[{"key":"filename","match":{"value":"bio/resume.md"}},{"key":"chunk_index","range":{"gte":15}}]}}'
 ```
 
 ## Why no Code-node-with-axios?
