@@ -80,7 +80,7 @@ cd ~/<repo> && git pull
 bash ~/agent/rag-ingest.sh projects
 ```
 
-Idempotency means re-ingesting the same files just overwrites their existing chunks (point IDs are deterministic from `doc_id + chunk_index`). New files are added; renamed files create new chunks at the new path and orphan the old ones — purge those manually if cleanliness matters.
+Idempotency means re-ingesting the same files just overwrites their existing chunks (point IDs are deterministic from `doc_id + chunk_index`). New files are added; renamed and deleted files are auto-purged by the ingest script's orphan-cleanup pass (see [Idempotency](#idempotency) below).
 
 Currently mounted this way:
 - `~/agent/rag/projects/_agent` → `~/bugsy/docs` (Bugsy's own docs — what you're reading right now)
@@ -115,15 +115,14 @@ Each chunk's Qdrant point ID is deterministic from `doc_id + chunk_index`, where
 - **Same filename in different categories** — won't collide because `rag-ingest.sh` sends `filename` as `<category>/<relative-path>`.
 - **Same H1 in two repos** — only matters if neither file has frontmatter *and* neither caller sends a filename. The default script always sends a filename, so this only bites direct webhook callers.
 
-**Caveat:** if the doc shrinks (fewer chunks than before), trailing chunks from the previous version stay orphaned in Qdrant. Worth pruning manually if you regularly shorten docs:
+### Auto-cleanup in `rag-ingest.sh`
 
-```bash
-# delete chunks for a filename where chunk_index >= new total
-docker run --rm --network agent_agent-net curlimages/curl:latest \
-  -s -X POST http://agent-qdrant:6333/collections/personal_knowledge/points/delete \
-  -H "Content-Type: application/json" \
-  -d '{"filter":{"must":[{"key":"filename","match":{"value":"bio/resume.md"}},{"key":"chunk_index","range":{"gte":15}}]}}'
-```
+The ingest helper runs two cleanup passes so the corpus stays in sync with the source tree without manual purges:
+
+1. **Shrink-orphans (per file)** — after each successful ingest, any chunks for that filename with `chunk_index >= new_total` get deleted. Handles docs that got shorter on re-ingest.
+2. **Rename/delete-orphans (per category)** — at the end of each category, the script scrolls Qdrant for every distinct `filename` under that category and purges any that aren't in the local file set. Handles renames and deletions in source repos.
+
+Both passes are skipped if the local category directory is empty or missing, so a temporarily-unmounted symlink can't wipe out a category. Direct webhook callers that bypass the script don't get cleanup — only the script does it.
 
 ## Why no Code-node-with-axios?
 
