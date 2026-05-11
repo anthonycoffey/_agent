@@ -76,9 +76,16 @@ nav:
       - architecture/credentials.md
   - Workflows:
       - workflows/bugsy-unified.md
+      - workflows/job-board.md
       - workflows/rag-ingest.md
       - workflows/rag-query.md
-      - workflows/job-board.md
+      - workflows/bugsy-chat.md
+      - workflows/bugsy-slack-rag.md
+      - workflows/bugsy-events.md
+      - workflows/bugsy-whatsapp.md
+      - workflows/bugsy-inbox-watcher.md
+      - workflows/bugsy-leads-hunter.md
+      - workflows/bugsy-research.md
   - Operations:
       - operations/deploy.md
       - operations/n8n-import.md

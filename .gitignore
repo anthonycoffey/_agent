@@ -33,3 +33,6 @@ Thumbs.db
 
 # RAG content — personal documents, never commit
 agent/rag/**/*.md
+
+# MkDocs build output
+/site/
