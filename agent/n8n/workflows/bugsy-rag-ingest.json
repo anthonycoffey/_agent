@@ -38,17 +38,18 @@
             { "name": "prompt", "value": "={{ $json.text }}" }
           ]
         },
-        "options": { "timeout": 30000 }
+        "options": { "timeout": 60000 }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [-460, 0],
       "id": "rag-embed-001",
-      "name": "Embed (Ollama)"
+      "name": "Embed (Ollama)",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const embeds = $input.all();\nconst sources = $('Parse & Chunk').all();\n\n// Deterministic UUID from a string (pure JS, no require) so re-ingesting\n// the same document overwrites its existing chunks instead of duplicating.\nfunction uuidFromString(s) {\n  let h1 = 0x811c9dc5, h2 = 0xdeadbeef, h3 = 0x1b873593, h4 = 0xc2b2ae35;\n  for (let i = 0; i < s.length; i++) {\n    const c = s.charCodeAt(i);\n    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;\n    h2 = Math.imul(h2 ^ c, 0x85ebca6b) >>> 0;\n    h3 = Math.imul(h3 ^ c, 0xc2b2ae35) >>> 0;\n    h4 = Math.imul(h4 ^ c, 0x27d4eb2f) >>> 0;\n  }\n  const hex = (n) => n.toString(16).padStart(8, '0');\n  const raw = (hex(h1) + hex(h2) + hex(h3) + hex(h4));\n  // Format as UUIDv5-shaped string (version nibble 5, variant nibble 8)\n  return raw.slice(0,8) + '-' + raw.slice(8,12) + '-5' + raw.slice(13,16) + '-8' + raw.slice(17,20) + '-' + raw.slice(20,32);\n}\n\nconst now = new Date().toISOString();\nconst points = embeds.map((e, i) => {\n  const meta = sources[i].json;\n  return {\n    id: uuidFromString(meta.doc_id + ':' + meta.chunk_index),\n    vector: e.json.embedding,\n    payload: {\n      text: meta.text,\n      title: meta.title,\n      category: meta.category,\n      tags: meta.tags,\n      filename: meta.filename,\n      doc_id: meta.doc_id,\n      chunk_index: meta.chunk_index,\n      total_chunks: meta.total_chunks,\n      ingested_at: now\n    }\n  };\n});\n\nreturn [{ json: { points, count: points.length, title: sources[0].json.title } }];"
+        "jsCode": "const embeds = $input.all();\nconst sources = $('Parse & Chunk').all();\n\n// Deterministic UUID from a string (pure JS, no require) so re-ingesting\n// the same document overwrites its existing chunks instead of duplicating.\nfunction uuidFromString(s) {\n  let h1 = 0x811c9dc5, h2 = 0xdeadbeef, h3 = 0x1b873593, h4 = 0xc2b2ae35;\n  for (let i = 0; i < s.length; i++) {\n    const c = s.charCodeAt(i);\n    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;\n    h2 = Math.imul(h2 ^ c, 0x85ebca6b) >>> 0;\n    h3 = Math.imul(h3 ^ c, 0xc2b2ae35) >>> 0;\n    h4 = Math.imul(h4 ^ c, 0x27d4eb2f) >>> 0;\n  }\n  const hex = (n) => n.toString(16).padStart(8, '0');\n  const raw = (hex(h1) + hex(h2) + hex(h3) + hex(h4));\n  // Format as UUIDv5-shaped string (version nibble 5, variant nibble 8)\n  return raw.slice(0,8) + '-' + raw.slice(8,12) + '-5' + raw.slice(13,16) + '-8' + raw.slice(17,20) + '-' + raw.slice(20,32);\n}\n\nconst now = new Date().toISOString();\nconst points = [];\nlet failed = 0;\nembeds.forEach((e, i) => {\n  const meta = sources[i].json;\n  const vec = e.json.embedding;\n  // Skip chunks where Embed (Ollama) errored. With onError=continueRegularOutput,\n  // failed items pass through with no `embedding` field — we drop them so the\n  // rest of the doc still ingests cleanly.\n  if (!Array.isArray(vec) || vec.length === 0) { failed++; return; }\n  points.push({\n    id: uuidFromString(meta.doc_id + ':' + meta.chunk_index),\n    vector: vec,\n    payload: {\n      text: meta.text,\n      title: meta.title,\n      category: meta.category,\n      tags: meta.tags,\n      filename: meta.filename,\n      doc_id: meta.doc_id,\n      chunk_index: meta.chunk_index,\n      total_chunks: meta.total_chunks,\n      ingested_at: now\n    }\n  });\n});\n\nreturn [{ json: { points, count: points.length, failed, title: sources[0].json.title } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -75,7 +76,7 @@
     {
       "parameters": {
         "respondWith": "text",
-        "responseBody": "={{ '✓ ' + $('Build Points').first().json.count + ' chunks stored — ' + $('Build Points').first().json.title + ' (qdrant: ' + $json.status + ')' }}",
+        "responseBody": "={{ '✓ ' + $('Build Points').first().json.count + ' chunks stored' + ($('Build Points').first().json.failed ? ' (' + $('Build Points').first().json.failed + ' chunks dropped, embed failed)' : '') + ' — ' + $('Build Points').first().json.title + ' (qdrant: ' + $json.status + ')' }}",
         "options": {}
       },
       "type": "n8n-nodes-base.respondToWebhook",

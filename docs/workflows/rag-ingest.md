@@ -20,10 +20,10 @@ flowchart LR
 ```
 
 - **Parse & Chunk** — strips YAML frontmatter, resolves a `title` (frontmatter `title:` → first `# H1` → `filename` → `Untitled`), extracts `tags`, slices the body into ~400-char chunks with 50-char overlap. Emits one item per chunk.
-- **Embed (Ollama)** — runs `nomic-embed-text` per chunk. Native HTTP Request node so n8n iterates per item automatically.
-- **Build Points** — pairs each embedding with its source chunk metadata; UUIDs are deterministic from `doc_id + chunk_index` where `doc_id` is the relative `filename` (rename-safe and collision-free across repos), falling back to `title` for legacy callers.
+- **Embed (Ollama)** — runs `nomic-embed-text` per chunk via a native HTTP Request node. Per-call timeout is **60s**; `onError: continueRegularOutput` lets the workflow tolerate a single chunk timing out (CPU Ollama sometimes pathologically slows on certain inputs) instead of killing the whole ingest.
+- **Build Points** — pairs each embedding with its source chunk metadata; UUIDs are deterministic from `doc_id + chunk_index` where `doc_id` is the relative `filename` (rename-safe and collision-free across repos), falling back to `title` for legacy callers. Chunks where the embed failed (no `embedding` array on the input item) are dropped so the rest of the doc still ingests cleanly.
 - **Upsert (Qdrant)** — single PUT with the full point array.
-- **Respond** — `✓ N chunks stored — <title>` or an error message with stage info.
+- **Respond** — `✓ N chunks stored — <title>` or `✓ N chunks stored (M chunks dropped, embed failed) — <title>` when the resilience path kicks in.
 
 ## Adding content
 
@@ -231,11 +231,13 @@ return chunks.map((chunk, idx) => ({
 
 - **Method:** `POST`
 - **URL:** `http://ollama:11434/api/embeddings`
-- **Timeout:** 30000ms
+- **Timeout:** 60000ms
 
 **Body:**
 - `model`: `nomic-embed-text`
 - `prompt`: `={{ $json.text }}`
+
+- **On error:** `continueRegularOutput`
 
 #### Build Points
 *Type:* `n8n-nodes-base.code`
@@ -262,11 +264,18 @@ function uuidFromString(s) {
 }
 
 const now = new Date().toISOString();
-const points = embeds.map((e, i) => {
+const points = [];
+let failed = 0;
+embeds.forEach((e, i) => {
   const meta = sources[i].json;
-  return {
+  const vec = e.json.embedding;
+  // Skip chunks where Embed (Ollama) errored. With onError=continueRegularOutput,
+  // failed items pass through with no `embedding` field — we drop them so the
+  // rest of the doc still ingests cleanly.
+  if (!Array.isArray(vec) || vec.length === 0) { failed++; return; }
+  points.push({
     id: uuidFromString(meta.doc_id + ':' + meta.chunk_index),
-    vector: e.json.embedding,
+    vector: vec,
     payload: {
       text: meta.text,
       title: meta.title,
@@ -278,10 +287,10 @@ const points = embeds.map((e, i) => {
       total_chunks: meta.total_chunks,
       ingested_at: now
     }
-  };
+  });
 });
 
-return [{ json: { points, count: points.length, title: sources[0].json.title } }];
+return [{ json: { points, count: points.length, failed, title: sources[0].json.title } }];
 ```
 
 #### Upsert (Qdrant)
@@ -303,7 +312,7 @@ return [{ json: { points, count: points.length, title: sources[0].json.title } }
 
 **Body:**
 ```text
-={{ '✓ ' + $('Build Points').first().json.count + ' chunks stored — ' + $('Build Points').first().json.title + ' (qdrant: ' + $json.status + ')' }}
+={{ '✓ ' + $('Build Points').first().json.count + ' chunks stored' + ($('Build Points').first().json.failed ? ' (' + $('Build Points').first().json.failed + ' chunks dropped, embed failed)' : '') + ' — ' + $('Build Points').first().json.title + ' (qdrant: ' + $json.status + ')' }}
 ```
 
 <!-- NODE-REF:END:bugsy-rag-ingest -->
