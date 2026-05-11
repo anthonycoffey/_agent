@@ -32,4 +32,7 @@ docker run --rm --network agent_agent-net curlimages/curl:latest \
   -s http://agent-qdrant:6333/collections | jq
 ```
 
-Most internal services do **not** publish ports to the host — that's intentional. The only host-published port is whatever cloudflared talks out on (no inbound).
+Most internal services do **not** publish ports to the host — that's intentional. Two deliberate exceptions:
+
+- `cloudflared` opens an outbound tunnel (no inbound from the internet).
+- `postgres` publishes `5432` on the VM's **loopback only** (`127.0.0.1:5432:5432`). It's unreachable from outside the VM, and the only practical way to use it from a laptop is to SSH-tunnel through Tailscale. See [reference/database.md](../reference/database.md#connecting-with-pgadmin) for the pgAdmin recipe.

@@ -94,6 +94,37 @@ ORDER BY created_at DESC
 LIMIT 20;
 ```
 
+### Connecting with pgAdmin
+
+Postgres publishes `5432` on the VM's loopback only — to reach it from a laptop, SSH-tunnel through Tailscale and point pgAdmin at the tunnel endpoint.
+
+**1. Get credentials** from the VM:
+
+```bash
+ssh agent@agent-vm "grep -E '^POSTGRES_(USER|PASSWORD|DB)=' ~/agent/.env"
+```
+
+There is one shared role/password serving both the `agent` and `n8n` logical databases.
+
+**2. Open the SSH tunnel** on the laptop. Leave this running while pgAdmin is in use:
+
+```powershell
+ssh -L 5432:127.0.0.1:5432 agent@agent-vm -N
+```
+
+**3. Register the server in pgAdmin:**
+
+| Field | Value |
+|---|---|
+| Name | `Bugsy (agent-vm)` |
+| Host | `127.0.0.1` |
+| Port | `5432` |
+| Username | from `POSTGRES_USER` |
+| Password | from `POSTGRES_PASSWORD` |
+| Maintenance database | `agent` |
+
+After connecting, both `agent` and `n8n` databases appear in the server's tree.
+
 ## Qdrant (`agent-qdrant`)
 
 Vector store. Single collection.

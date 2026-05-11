@@ -40,6 +40,12 @@ services:
         bind:
           create_host_path: false
     networks: [agent-net]
+    # Loopback-only publish so pgAdmin can reach Postgres via SSH tunnel
+    # (`ssh -L 5432:127.0.0.1:5432 agent@agent-vm`). The 127.0.0.1 prefix
+    # keeps it off the VM's external interfaces — never reachable from
+    # anywhere except the VM itself plus whatever SSH-tunnels in.
+    ports:
+      - "127.0.0.1:5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
