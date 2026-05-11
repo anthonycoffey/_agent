@@ -45,7 +45,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const axios = require('axios');\nconst { question, responseUrl } = $('Parse Command').first().json;\n\nif (!question) return [];\n\nconst embedRes = await axios.post('http://ollama:11434/api/embeddings', {\n  model: 'nomic-embed-text',\n  prompt: question\n});\n\nconst searchRes = await axios.post('http://qdrant:6333/collections/personal_knowledge/points/search', {\n  vector: embedRes.data.embedding,\n  limit: 5,\n  with_payload: true\n});\n\nconst chunks = searchRes.data.result.map(r => ({\n  text: r.payload.text,\n  title: r.payload.title,\n  category: r.payload.category,\n  score: Math.round(r.score * 100) / 100\n}));\n\nreturn [{ json: { question, responseUrl, chunks } }];"
+        "jsCode": "const axios = require('axios');\nconst { question, responseUrl } = $('Parse Command').first().json;\n\nif (!question) return [];\n\nconst embedRes = await axios.post('http://ollama:11434/api/embeddings', {\n  model: 'nomic-embed-text',\n  prompt: question\n});\n\nconst searchRes = await axios.post('http://qdrant:6333/collections/personal_knowledge/points/search', {\n  vector: embedRes.data.embedding,\n  limit: 15,\n  with_payload: true\n});\n\nconst chunks = searchRes.data.result.map(r => ({\n  text: r.payload.text,\n  title: r.payload.title,\n  category: r.payload.category,\n  score: Math.round(r.score * 100) / 100\n}));\n\nreturn [{ json: { question, responseUrl, chunks } }];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

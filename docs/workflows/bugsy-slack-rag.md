@@ -96,7 +96,7 @@ const embedRes = await axios.post('http://ollama:11434/api/embeddings', {
 
 const searchRes = await axios.post('http://qdrant:6333/collections/personal_knowledge/points/search', {
   vector: embedRes.data.embedding,
-  limit: 5,
+  limit: 15,
   with_payload: true
 });
 

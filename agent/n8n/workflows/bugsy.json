@@ -251,7 +251,7 @@
         "sendBody": true,
         "contentType": "json",
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ vector: $json.embedding, limit: 5, with_payload: true }) }}",
+        "jsonBody": "={{ JSON.stringify({ vector: $json.embedding, limit: 15, with_payload: true }) }}",
         "options": { "timeout": 30000 }
       },
       "type": "n8n-nodes-base.httpRequest",

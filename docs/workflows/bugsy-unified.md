@@ -253,7 +253,7 @@ flowchart TD
 
 **Body:**
 ```json
-={{ JSON.stringify({ vector: $json.embedding, limit: 5, with_payload: true }) }}
+={{ JSON.stringify({ vector: $json.embedding, limit: 15, with_payload: true }) }}
 ```
 
 #### Build Context

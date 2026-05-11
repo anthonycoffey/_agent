@@ -16,7 +16,7 @@ Content-Type: application/json
 
 {
   "question": "what are my strongest technical skills?",
-  "top_k": 5     // optional, default 5
+  "top_k": 15    // optional, default 15
 }
 ```
 
@@ -119,7 +119,7 @@ const axios = require('axios');
 const raw = $input.first().json;
 const body = raw.body || raw;
 const question = body.question;
-const topK = body.top_k || 5;
+const topK = body.top_k || 15;
 
 if (!question || typeof question !== 'string' || !question.trim()) {
   return [{ json: { error: 'question is required and must be a non-empty string' } }];

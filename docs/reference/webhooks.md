@@ -52,7 +52,7 @@ POST /webhook/slack-bugsy
 POST /webhook/rag-query
 {
   "question": "what are my strongest skills?",
-  "top_k": 5
+  "top_k": 15
 }
 ```
 
