@@ -18,7 +18,7 @@ All three reach the same AI Agent with the same memory store and the same RAG pi
 
 ## Activation status
 
-The unified workflow is in the repo but **not yet activated in n8n** — Slack DMs/@mentions still flow through the predecessor [`bugsy-events`](bugsy-events.md). Activating `bugsy` requires deactivating `bugsy-events` first, since both claim `/slack-bugsy` and n8n will refuse a path collision. The `bugsy-chat` workflow (`/bugsy-cmd`) will keep serving its slash command until you re-point Slack's `/bugsy` command at `/ask` and activate this workflow.
+The unified workflow is **active** in n8n. It owns `/slack-bugsy` (DMs + @mentions) and `/ask` (slash command). The predecessor flows ([`bugsy-events`](bugsy-events.md), [`bugsy-chat`](bugsy-chat.md)) are deactivated; their JSON files stay in the repo as historical reference.
 
 ## Pipeline
 
@@ -81,14 +81,14 @@ The system prompt is purely static persona + an instruction explaining the struc
 
 ## Predecessors
 
-The unified workflow consolidates two earlier ones that are still in the repo (and currently still serving their respective surfaces in n8n):
+The unified workflow consolidates two earlier ones that remain in the repo as historical reference:
 
-| Predecessor | What it does | Doc |
+| Predecessor | What it did | Doc |
 |---|---|---|
 | `bugsy-events.json` | Slack DMs/mentions, memory, no RAG | [bugsy-events](bugsy-events.md) |
 | `bugsy-chat.json` | `/bugsy` slash command, persona only | [bugsy-chat](bugsy-chat.md) |
 
-When you activate the unified workflow, deactivate both predecessors first — `bugsy-events` claims `/slack-bugsy` directly, and `bugsy-chat` claims `/bugsy-cmd` (which becomes redundant once you re-point Slack's `/bugsy` command at `/ask`).
+Both are deactivated in n8n — the unified workflow took over their surfaces (`/slack-bugsy` directly; `/bugsy` was re-pointed at `/ask` in the Slack app config).
 
 > A third predecessor, `bugsy-slack-rag.json`, has been removed from the repo. It was a one-shot RAG slash command without memory — superseded by the unified workflow's RAG pre-injection.
 

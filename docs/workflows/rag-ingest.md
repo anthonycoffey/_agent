@@ -82,7 +82,9 @@ bash ~/agent/rag-ingest.sh projects
 
 Idempotency means re-ingesting the same files just overwrites their existing chunks (point IDs are deterministic from `doc_id + chunk_index`). New files are added; renamed files create new chunks at the new path and orphan the old ones — purge those manually if cleanliness matters.
 
-Currently mounted this way: `~/agent/rag/projects/coffey-codes` → `~/coffey.codes/docs` (46 docs).
+Currently mounted this way:
+- `~/agent/rag/projects/_agent` → `~/bugsy/docs` (Bugsy's own docs — what you're reading right now)
+- `~/agent/rag/projects/coffey-codes` → `~/coffey.codes/docs` (portfolio site docs)
 
 ## Title resolution
 

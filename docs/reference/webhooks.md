@@ -7,18 +7,26 @@ tags: [bugsy, webhooks, n8n, cloudflare-tunnel, http, api]
 
 All webhooks are exposed via Cloudflare Tunnel at `https://n8n.coffey.codes/webhook/<path>`.
 
+Only workflows currently active in n8n are listed first. Inactive paths follow in their own section so the live-state and the historical shape are both visible.
+
 | Path | Method | Workflow | Caller | Notes |
 |---|---|---|---|---|
-| `/slack-bugsy` | POST | `bugsy-events.json` (active) **or** `bugsy.json` (unified) | Slack Event API | DMs + @mentions. Handles URL-verification challenge. Path collides between the two — only one can be active at a time. |
-| `/ask` | POST | `bugsy.json` (unified) | Slack slash command `/ask` | ACKs immediately, replies async via `response_url`. |
-| `/bugsy-cmd` | POST | `bugsy-chat.json` | Slack slash command `/bugsy` | Stateless persona chat. ACKs immediately. |
+| `/slack-bugsy` | POST | `bugsy.json` (unified) | Slack Event API | DMs + @mentions. Handles URL-verification challenge. |
+| `/ask` | POST | `bugsy.json` (unified) | Slack slash command `/ask` (formerly `/bugsy`) | ACKs immediately, replies async via `response_url`. |
 | `/rag-query` | POST | `bugsy-rag-query.json` | Scripts, testing | JSON-API. No memory. See [RAG query](../workflows/rag-query.md). |
 | `/rag-ingest` | POST | `bugsy-rag-ingest.json` | `rag-ingest.sh` | Pushes a markdown doc into Qdrant. |
 | `/job-board` | GET | `bugsy-job-board-ui.json` | Browser | HTML view of the job listings table. |
 | `/bugsy-research` | POST | `bugsy-research.json` | Slack slash command `/research <target>` | On-demand prospect brief. |
-| `/bugsy-wa` | POST | `bugsy-whatsapp.json` | Evolution API webhooks | WhatsApp message events. |
 
-Cron- and Gmail-triggered workflows (`bugsy-job-board-fetcher`, `bugsy-leads-hunter`, `bugsy-inbox-watcher`) have no inbound webhook — see each workflow's doc page for trigger details.
+Cron- and Gmail-triggered active workflows (`bugsy-job-board-fetcher`, `bugsy-leads-hunter`) have no inbound webhook — see each workflow's doc page for trigger details.
+
+### Inactive webhooks (historical reference)
+
+| Path | Workflow | Why inactive |
+|---|---|---|
+| `/slack-bugsy` (formerly) | `bugsy-events.json` | Superseded by the unified workflow. |
+| `/bugsy-cmd` | `bugsy-chat.json` | Slash command re-pointed at `/ask`; persona chat now lives in the unified workflow. |
+| `/bugsy-wa` | `bugsy-whatsapp.json` | WhatsApp surface not currently running. |
 
 ## Payload examples
 

@@ -8,6 +8,8 @@ n8n_workflows: [bugsy-whatsapp]
 
 `agent/n8n/workflows/bugsy-whatsapp.json` — webhook handler for Evolution API events at `POST /bugsy-wa`. Routes inbound WhatsApp messages to Bugsy and replies in-thread.
 
+> **Status:** not currently imported into n8n. The JSON is kept in the repo as the canonical shape for the WhatsApp surface; re-import via the URL pattern in [n8n workflow import](../operations/n8n-import.md) when you want to bring it back online.
+
 ## The pipeline
 
 1. **Evolution Webhook** receives every Evolution event (Evolution is a self-hosted WhatsApp gateway).

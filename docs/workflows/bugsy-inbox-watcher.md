@@ -8,6 +8,8 @@ n8n_workflows: [bugsy-inbox-watcher]
 
 `agent/n8n/workflows/bugsy-inbox-watcher.json` — Gmail-trigger that polls Anthony's inbox every minute and pre-processes new mail before it reaches a human.
 
+> **Status:** currently **inactive** in n8n. The JSON is fully wired up but the workflow is toggled off. Re-activate via the n8n UI when you want the triage + draft pipeline running again.
+
 ## What it does
 
 1. **Gmail Trigger** fires for every new email (every-minute poll).
