@@ -88,6 +88,7 @@ nav:
   - Operations:
       - operations/deploy.md
       - operations/n8n-import.md
+      - operations/workflow-reference-generator.md
       - operations/troubleshooting.md
   - Reference:
       - reference/env-vars.md
