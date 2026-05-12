@@ -40,7 +40,7 @@ Stored in `agent.leads` (see [database reference](../reference/database.md)) and
 
 ## Node reference: Bugsy — Daily Lead Hunter (/leads)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-leads-hunter.json` on 2026-05-11. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-leads-hunter.json` on 2026-05-12. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 21 · **Execution order:** `v1`
 
@@ -478,7 +478,7 @@ return [{ json: { slackText: [header, ...lines].join('\n\n') } }];
 
 - **Resource:** `message`
 - **Operation:** `post`
-- **Channel:** `[object Object]`
+- **Channel:** `C0AV83XUSTU`
 
 **Text:**
 ```text

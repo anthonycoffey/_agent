@@ -136,7 +136,7 @@ Earlier this workflow looped axios calls inside one Code node. The n8n task runn
 
 ## Node reference: Bugsy — RAG Ingest
 
-> Auto-generated from `agent/n8n/workflows/bugsy-rag-ingest.json` on 2026-05-11. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-rag-ingest.json` on 2026-05-12. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 6 · **Execution order:** `v1`
 

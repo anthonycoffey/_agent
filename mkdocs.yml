@@ -80,6 +80,7 @@ nav:
       - workflows/rag-ingest.md
       - workflows/rag-query.md
       - workflows/bugsy-inbox-watcher.md
+      - workflows/bugsy-jira-digest.md
       - workflows/bugsy-leads-hunter.md
       - workflows/bugsy-research.md
   - Operations:

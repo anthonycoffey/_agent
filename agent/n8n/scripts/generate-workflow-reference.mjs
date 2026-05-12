@@ -227,9 +227,17 @@ function renderLangchainMemory(p) {
     .join('\n');
 }
 
+function fmtResourceLocator(loc) {
+  if (loc == null) return null;
+  if (typeof loc === 'string') return loc;
+  if (loc.cachedResultName && loc.value) return `${loc.cachedResultName} (${loc.value})`;
+  return loc.value || loc.cachedResultName || null;
+}
+
 function renderSlack(p) {
   const lines = [`- **Resource:** \`${p.resource || 'message'}\``, `- **Operation:** \`${p.operation || 'post'}\``];
-  if (p.channel?.value || p.channelId) lines.push(`- **Channel:** \`${p.channel?.value || p.channelId}\``);
+  const ch = fmtResourceLocator(p.channel) || fmtResourceLocator(p.channelId) || fmtResourceLocator(p.user);
+  if (ch) lines.push(`- **Channel:** \`${ch}\``);
   if (p.text) {
     lines.push('', '**Text:**');
     lines.push(fence('text', String(p.text)));

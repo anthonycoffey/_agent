@@ -6,7 +6,7 @@
 The goal: automate the repetitive parts of freelance dev life — job hunting, lead gen, outreach,
 research — and build a personal knowledge base that makes every AI interaction smarter over time.
 
-Bugsy has a persona: 1970s New York Italian mobster. Calls Anthony "boss." The persona wraps
+Bugsy has a persona: 1970s New York Italian mobster. Calls Anthony "boss", "skip" like a mafia character in a movie. The persona wraps
 useful output — it's flavor, not noise. Don't let it swallow the actual content.
 
 **Anthony's experience level:** Newer to infra and agents. Explain concepts when something
@@ -107,7 +107,7 @@ _agent/
 All workflow JSON files live in `agent/n8n/workflows/`. After pushing changes, they must be
 manually re-imported into n8n via the UI (Import from URL using the GitHub raw URL).
 
-All eight currently in the repo are active in n8n. Per-workflow narrative + auto-generated node reference lives at `docs/workflows/<basename>.md`.
+All workflows in the repo are intended to run in n8n (a couple are inactive until reviewed — see Active column). Per-workflow narrative + auto-generated node reference lives at `docs/workflows/<basename>.md`.
 
 | File | Trigger | Purpose |
 |---|---|---|
@@ -119,6 +119,7 @@ All eight currently in the repo are active in n8n. Per-workflow narrative + auto
 | `bugsy-leads-hunter.json` | cron 6:00 CT M-F | 12 SearXNG queries → dedupe → batched scoring → top 5 to `agent.leads` + Slack DM. |
 | `bugsy-research.json` | webhook POST `/bugsy-research` (`/research <target>`) | On-demand prospect brief; SearXNG + homepage fetch → haiku-4-5 → DM the boss, optional Gmail draft. |
 | `bugsy-inbox-watcher.json` | Gmail trigger | Classifies inbound mail (important / needs_reply / scheduling / promo), labels, drafts replies, pings Slack. Currently inactive in n8n. |
+| `bugsy-jira-digest.json` | cron 8:00 + 16:00 CT M-F | Pulls work-email Jira notifications (`jira@ultrasoundai.atlassian.net`), summarizes activity, extracts action items, posts to `#mulberry-street` with ticket IDs linkified as `<URL\|UTT-NNN>` and link unfurl disabled. Uses Bitmotive Gmail credential. |
 
 The earlier per-surface Slack flows (`bugsy-chat.json`, `bugsy-events.json`, `bugsy-slack-rag.json`) and `bugsy-whatsapp.json` were rolled into the unified workflow / removed; see `git log --diff-filter=D -- agent/n8n/workflows/` for their historical shapes.
 

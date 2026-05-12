@@ -84,7 +84,7 @@ The system prompt is purely static persona + an instruction explaining the struc
 
 ## Node reference: Bugsy
 
-> Auto-generated from `agent/n8n/workflows/bugsy.json` on 2026-05-11. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy.json` on 2026-05-12. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 19 · **Execution order:** `v1`
 
@@ -357,7 +357,7 @@ Answer ONLY the USER QUESTION. Do not echo or quote the structured sections back
 
 - **Resource:** `message`
 - **Operation:** `post`
-- **Channel:** `[object Object]`
+- **Channel:** `={{ $('Build Context').first().json.channel }}`
 
 **Text:**
 ```text

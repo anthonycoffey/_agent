@@ -1,0 +1,139 @@
+{
+  "name": "Bugsy — Jira Digest (work email)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 8,16 * * 1-5" }] },
+        "timezone": "America/Chicago"
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1280, 300],
+      "id": "jira-sched-001",
+      "name": "Schedule (8am + 4pm CT M-F)"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {
+          "q": "from:jira@ultrasoundai.atlassian.net newer_than:1d"
+        },
+        "options": {
+          "downloadAttachments": false,
+          "dataPropertyAttachmentsPrefixName": "attachment_"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [-1000, 300],
+      "id": "jira-gmail-fetch-001",
+      "name": "Gmail — Get Jira Mail",
+      "alwaysOutputData": true,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_BITMOTIVE_GMAIL_CRED_ID",
+          "name": "Gmail - Bitmotive (anthony@bitmotive.com)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const emails = $('Gmail — Get Jira Mail').all();\n\n// Strip HTML so the LLM gets clean text instead of markup\nconst stripHtml = (s) => String(s || '')\n  .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n  .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&lt;/g, '<')\n  .replace(/&gt;/g, '>')\n  .replace(/\\s+/g, ' ')\n  .trim();\n\nif (!emails.length || (emails.length === 1 && !emails[0].json?.id)) {\n  return [{ json: { count: 0, emails: '(no Jira mail in the window)' } }];\n}\n\nconst lines = emails.map((it, i) => {\n  const j = it.json || {};\n  const from = (j.from && j.from.text) ? j.from.text : (j.from || j.From || '?');\n  const subject = j.subject || j.Subject || '?';\n  const snippet = j.snippet || '';\n  const body = stripHtml(j.text || j.html || '').substring(0, 1200);\n  return `--- Email ${i + 1} ---\\nFrom: ${from}\\nSubject: ${subject}\\nSnippet: ${snippet}\\nBody: ${body}`;\n}).join('\\n\\n');\n\nreturn [{ json: { count: emails.length, emails: lines } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-720, 300],
+      "id": "jira-aggregate-001",
+      "name": "Aggregate Emails"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "claude-sonnet-4-6",
+          "mode": "list",
+          "cachedResultName": "CLAUDE-SONNET-4-6"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are Bugsy, the boss's right-hand. Voice: 1920s NY Italian-American mobster — confident, warm, direct. Use voice flourishes (capisce, boss, ya, see) SPARINGLY — at MOST two across the whole digest, ideally in the opener and closer. Underneath the voice the content must be CORRECT, ACCURATE, and PROFESSIONAL.\n\nYou're reading a digest of Jira notification emails from ultrasoundai.atlassian.net (subject prefix '[JIRA]', project key UTT). Produce ONE Slack message in Slack mrkdwn with two sections:\n\n*Summary*\nWhat's moved on the project since the last digest. Group activity by ticket where it makes sense. Call out: blockers, status changes, priority shifts, deadlines, who's waiting on whom. 2-5 short paragraphs. Dense, not chatty.\n\n*Action Items*\nConcrete things the boss has to DO. One bullet per item starting with •. Cover:\n- tickets newly assigned to him\n- @mentions calling him out\n- review or approval requests\n- status changes that need a response from him\n- threads where someone is waiting on his input\n- work that obviously needs a ticket but doesn't have one — suggest creating, label '(no ticket yet)'\n\nFORMATTING RULES — strict:\n- EVERY ticket ID (UTT-NNN) must be a hyperlink in this exact form: <https://ultrasoundai.atlassian.net/browse/UTT-NNN|UTT-NNN>. No bare 'UTT-123' anywhere.\n- Slack mrkdwn only: *bold*, _italic_, `code`, bullets with •.\n- No markdown headers (no `#`), no tables.\n- No closing signature.\n- Keep it tight. If something's repeated across emails (same comment quoted back), mention once.\n\nIf the input is '(no Jira mail in the window)': respond with a one-liner in voice, e.g. 'Quiet shift, boss — nothin' worth ya time on the Jira front.'\n\nOutput the message body ONLY — no preamble, no 'Here is your digest:'.",
+              "role": "system"
+            },
+            {
+              "content": "={{ $json.emails }}"
+            }
+          ]
+        },
+        "options": {
+          "temperature": 0.5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [-440, 300],
+      "id": "jira-digest-llm-001",
+      "name": "Write Digest",
+      "credentials": {
+        "openAiApi": {
+          "id": "umDluPchh1il2V8f",
+          "name": "LiteLLM - local proxy"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AV83XUSTU",
+          "mode": "id",
+          "cachedResultName": "mulberry-street"
+        },
+        "text": "={{ $json.message.content }}",
+        "otherOptions": {
+          "link_names": true,
+          "mrkdwn": true,
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [-160, 300],
+      "id": "jira-slack-post-001",
+      "name": "Post to Mulberry Street",
+      "webhookId": "bugsy-jira-digest-slack-001",
+      "credentials": {
+        "slackApi": {
+          "id": "TIP9AbQBq7X5Qidd",
+          "name": "Slack - Bugsy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule (8am + 4pm CT M-F)": {
+      "main": [[{ "node": "Gmail — Get Jira Mail", "type": "main", "index": 0 }]]
+    },
+    "Gmail — Get Jira Mail": {
+      "main": [[{ "node": "Aggregate Emails", "type": "main", "index": 0 }]]
+    },
+    "Aggregate Emails": {
+      "main": [[{ "node": "Write Digest", "type": "main", "index": 0 }]]
+    },
+    "Write Digest": {
+      "main": [[{ "node": "Post to Mulberry Street", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

@@ -29,7 +29,7 @@ Manual targeted research, in contrast to the cron-driven [leads hunter](bugsy-le
 
 ## Node reference: Bugsy — Prospect Research (slash command)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-research.json` on 2026-05-11. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-research.json` on 2026-05-12. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 13 · **Execution order:** `v1`
 
@@ -315,6 +315,7 @@ return [{ json: parsed }];
 
 - **Resource:** `message`
 - **Operation:** `post`
+- **Channel:** `={{ $('Extract Fields').item.json.userId }}`
 
 **Text:**
 ```text
