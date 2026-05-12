@@ -478,7 +478,7 @@ return [{ json: { slackText: [header, ...lines].join('\n\n') } }];
 
 - **Resource:** `message`
 - **Operation:** `post`
-- **Channel:** `C0AV83XUSTU`
+- **Channel:** `mulberry-street (C0AV83XUSTU)`
 
 **Text:**
 ```text

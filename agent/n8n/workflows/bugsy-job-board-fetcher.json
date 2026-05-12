@@ -144,9 +144,14 @@
     {
       "parameters": {
         "select": "channel",
-        "channelId": { "__rl": true, "value": "C0AV83XUSTU", "mode": "id" },
+        "channelId": { "__rl": true, "value": "C0AV83XUSTU", "mode": "id", "cachedResultName": "mulberry-street" },
         "text": "={{ $json.slackText }}",
-        "otherOptions": {}
+        "otherOptions": {
+          "link_names": true,
+          "mrkdwn": true,
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
       },
       "type": "n8n-nodes-base.slack",
       "typeVersion": 2.4,
