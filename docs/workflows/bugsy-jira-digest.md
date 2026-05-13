@@ -45,15 +45,25 @@ Empty-inbox runs collapse to a single in-voice line.
 
 Slack mrkdwn link syntax is `<URL|display>`. When display text is supplied (not just a bare URL), Slack typically suppresses link previews on its own — and the node also sets `unfurl_links` + `unfurl_media` to `false` belt-and-suspenders. A message with 15 tickets stays a single tight digest instead of a tower of unfurled cards.
 
-## Credentials required
+## Credentials
 
 | Slot | Credential | Notes |
 |---|---|---|
-| Gmail | `Gmail - Bitmotive (anthony@bitmotive.com)` | OAuth2, work account. **You must add this credential in n8n before activating.** |
+| Gmail | `Gmail - Bugsy (anthony@bitmotive.com)` | OAuth2, work account. The credential id `ScdvtlZU9jnWCan2` is bound in the JSON — re-binding only needed if you build a fresh n8n instance. |
 | LiteLLM | `LiteLLM - local proxy` | Already in n8n — same one every other workflow uses. |
 | Slack | `Slack - Bugsy` | Already in n8n. |
 
-After importing the workflow, open the `Gmail — Get Jira Mail` node and bind the Bitmotive credential (the JSON ships a placeholder `id`). Then activate.
+## Temporal accuracy guardrail
+
+The system prompt closes with two hard requirements:
+
+```
+REQUIREMENTS:
+1. THE OUTPUT MUST BE TEMPORALLY ACCURATE, OUTDATED EVENTS SHOULD NOT BE REPORTED AS CURRENT.
+2. LOOK AT TIMESTAMPS TO VERIFY ORDER OF OPERATIONS
+```
+
+Without this, the LLM tends to flatten the email feed into "what's happening" without respecting that comment timestamps may be hours apart — so an early-morning status change followed by an afternoon revert would get reported as "status changed to X" instead of "X then reverted to Y." Keeping these front-and-center makes the digest a trustworthy timeline view, not a soup of recent verbs.
 
 ## Tuning
 
@@ -70,7 +80,7 @@ After importing the workflow, open the `Gmail — Get Jira Mail` node and bind t
 
 ## Node reference: Bugsy — Jira Digest (work email)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-12. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-13. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 5 · **Execution order:** `v1`
 
@@ -103,7 +113,7 @@ flowchart TD
 - **Resource:** `message`
 - **Operation:** `getAll`
 
-- **Credential (gmailOAuth2):** `Gmail - Bitmotive (anthony@bitmotive.com)`
+- **Credential (gmailOAuth2):** `Gmail - Bugsy (anthony@bitmotive.com)`
 
 #### Aggregate Emails
 *Type:* `n8n-nodes-base.code`
@@ -173,6 +183,10 @@ FORMATTING RULES — strict:
 If the input is '(no Jira mail in the window)': respond with a one-liner in voice, e.g. 'Quiet shift, boss — nothin' worth ya time on the Jira front.'
 
 Output the message body ONLY — no preamble, no 'Here is your digest:'.
+
+REQUIREMENTS:
+1. THE OUTPUT MUST BE TEMPORALLY ACCURATE, OUTDATED EVENTS SHOULD NOT BE REPORTED AS CURRENT.
+2. LOOK AT TIMESTAMPS TO VERIFY ORDER OF OPERATIONS
 ```
 
 **USER message:**
