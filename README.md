@@ -23,7 +23,7 @@ Slack-driven interface.
 
 ## Design principles
 
-- **Pull first, push later.** Chat partner before scheduled workflows.
+- **Git first, edit later.** Because we import JSON workflows, commit them asap as we develop so that current working versions can be imported via URL
 - **Slack is the control panel.** Digests, approvals, questions; reactions gate irreversible actions.
 - **Human in the loop for anything that sends.** Email, social posts, code merges.
 - **Memory is the moat.** An assistant that knows *you* beats one with 50 integrations and no context.
