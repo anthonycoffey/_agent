@@ -48,6 +48,43 @@ docker run --rm --network agent_agent-net curlimages/curl:latest \
   -s http://agent-qdrant:6333/collections | jq
 ```
 
+## Tailscale SSH fails with 502 Bad Gateway / "socket forbidden" — local VPN is on
+
+Symptom (from a Windows machine running NordVPN, ExpressVPN, ProtonVPN, or similar):
+
+```
+> tailscale ssh agent@agent-vm
+Dial("agent-vm.tailXXXXXX.ts.net.", 22): unexpected HTTP response: 502 Bad Gateway,
+dial failure: dial tcp 100.x.x.x:22: connectex: An attempt was made to access a socket
+in a way forbidden by its access permissions.
+
+> ssh agent@agent-vm
+ssh: connect to host agent-vm port 22: Permission denied
+```
+
+`tailscale status` may also show the peer with a bare `-` (no recent contact) instead of `idle`.
+
+**Cause:** consumer VPN clients install a virtual network adapter and an aggressive split-tunnel /
+kill-switch policy that captures **all** outbound traffic, including the local Tailscale process.
+Tailscale's WireGuard packets get blackholed, the control plane sees the peer as unreachable, and
+Windows reports `WSAEACCES (10013)` on the raw socket attempt. **Enabling a VPN while a Tailscale
+SSH session is open will terminate the active session too** — not just block new ones.
+
+**Fix:** disconnect the VPN. SSH works immediately, no Tailscale restart needed.
+
+**Workarounds if you need both at once:**
+
+- Configure the VPN client's split-tunnel exclusions to bypass the Tailscale process / the
+  `100.64.0.0/10` CGNAT range (NordVPN: Settings → Split Tunneling → Add `tailscaled.exe`).
+- Use the GCP IAP tunnel instead, which doesn't depend on Tailscale at all:
+  ```powershell
+  gcloud compute ssh agent-vm --zone=us-central1-a --tunnel-through-iap --project=bugsy-ai
+  ```
+
+Before chasing this as a VM-side problem (expired Tailscale node key, dead `tailscaled`, VM crash),
+**first toggle the local VPN off** and retry. It's the single most common cause of "Tailscale was
+working yesterday and now it isn't."
+
 ## Cloud-init didn't apply my latest change
 
 Cloud-init only runs on the **first boot**. After that, changes to `tf/` cloud-init data are inert until you replace the VM:
