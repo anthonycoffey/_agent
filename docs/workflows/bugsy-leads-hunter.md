@@ -40,7 +40,7 @@ Stored in `agent.leads` (see [database reference](../reference/database.md)) and
 
 ## Node reference: Bugsy — Daily Lead Hunter (/leads)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-leads-hunter.json` on 2026-05-13. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-leads-hunter.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 21 · **Execution order:** `v1`
 

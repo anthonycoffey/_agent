@@ -107,7 +107,7 @@ inline under the title.
 
 ## Node reference: Bugsy — Job Board UI
 
-> Auto-generated from `agent/n8n/workflows/bugsy-job-board-ui.json` on 2026-05-13. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-job-board-ui.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 4 · **Execution order:** `v1`
 
@@ -371,7 +371,7 @@ return [{ json: { html } }];
 
 ## Node reference: Bugsy — Job Board Fetcher (daily)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-job-board-fetcher.json` on 2026-05-13. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-job-board-fetcher.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 13 · **Execution order:** `v1`
 
