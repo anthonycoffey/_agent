@@ -70,6 +70,11 @@ plugins:
 
 nav:
   - Home: index.md
+  - DDD:
+      - Overview: README.md
+      - Summary (TOC): SUMMARY.md
+      - Development Standards: documentation/development-standards.md
+      - Documentation Index: documentation/README.md
   - Architecture:
       - architecture/overview.md
       - architecture/networking.md
@@ -92,3 +97,8 @@ nav:
       - reference/env-vars.md
       - reference/webhooks.md
       - reference/database.md
+  - Templates:
+      - templates/feature-template.md
+      - templates/bug-template.md
+      - templates/adr-template.md
+      - templates/agent-brief-template.md
