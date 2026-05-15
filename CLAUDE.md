@@ -230,11 +230,20 @@ cd ~/bugsy && git pull
 cd ~/agent && docker compose up -d <service>   # if docker-compose.yml changed
 ```
 
-### n8n workflow changes
-1. Push JSON changes to GitHub
-2. In n8n UI → open workflow → ⋮ → Import from URL:
-   `https://raw.githubusercontent.com/anthonycoffey/_agent/main/agent/n8n/workflows/<file>.json`
-3. Save → activate
+### n8n workflow changes (file-based, verify-before-push)
+
+Workflows are edited locally and **imported into n8n from the file**, not from a GitHub raw URL.
+Git is for verified, working workflows — not in-flight iteration. The flow:
+
+1. Edit `agent/n8n/workflows/<file>.json` locally. Do NOT push yet.
+2. In n8n UI → open the workflow → ⋮ → **Import from File** → pick the local JSON. Save → activate.
+3. Trigger the workflow (manual run or wait for cron) and verify the change end-to-end. Check
+   logs, downstream side effects, and that the previous behavior didn't regress.
+4. Once you've confirmed it works, commit and push. The commit message describes verified
+   behavior, not "should work" speculation.
+
+This keeps `git log` honest: every workflow commit reflects a behavior that was observed to
+work in the running n8n instance. No "fix attempt", "tweak", or "try again" commits.
 
 ### Terraform changes
 ```powershell
