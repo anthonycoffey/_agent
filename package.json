@@ -1,0 +1,33 @@
+{
+  "name": "bugsy",
+  "version": "0.0.1",
+  "description": "The Bugsy node package, NPM managed for easy scripts management",
+  "keywords": [
+    "ai",
+    "agent",
+    "agent",
+    "llm",
+    "ai",
+    "bot",
+    "slack"
+  ],
+  "homepage": "https://github.com/anthonycoffey/_agent#readme",
+  "bugs": {
+    "url": "https://github.com/anthonycoffey/_agent/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anthonycoffey/_agent.git"
+  },
+  "license": "MIT",
+  "author": "anthonycoffey",
+  "type": "module",
+  "main": "README.md",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "docs": "python -m mkdocs serve",
+    "refresh": "refresh.ps1"
+  }
+}
