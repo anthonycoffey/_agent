@@ -20,12 +20,16 @@ flowchart LR
   G --> A[Aggregate Emails]
   A --> L[Write Digest — claude-sonnet-4-6]
   L --> SL[Post to Mulberry Street]
+  L --> RP[Build RAG Payload]
+  RP --> RI[POST to RAG Ingest]
 ```
 
 - **Gmail — Get Jira Mail** uses Gmail search `from:jira@ultrasoundai.atlassian.net newer_than:1d`. `alwaysOutputData: true` so the downstream chain runs even on empty inboxes.
 - **Aggregate Emails** strips HTML, truncates each body to 1200 chars, and folds all messages into one big text block with `--- Email N ---` separators. Outputs `{ count, emails }`. Returns `(no Jira mail in the window)` when the inbox is empty so the LLM can produce a quiet-shift one-liner.
 - **Write Digest** is a single-shot LLM call against `claude-sonnet-4-6` via LiteLLM. System prompt enforces persona (sparing, max two flourishes), output structure (`*Summary*` + `*Action Items*`), and the strict link-format rule for ticket IDs.
 - **Post to Mulberry Street** sends the result to channel `C0AV83XUSTU` with `unfurl_links: false` and `unfurl_media: false` so the linkified ticket IDs don't blow up the message with Atlassian previews.
+- **Build RAG Payload** (parallel branch) wraps the digest body in YAML frontmatter and builds the `/rag-ingest` request body. See [RAG ingestion](#rag-ingestion) below.
+- **POST to RAG Ingest** fires the request at `https://n8n.coffey.codes/webhook/rag-ingest` with `onError: continueRegularOutput` so a RAG failure can't break the Slack branch (which runs concurrently off the same `Write Digest` output).
 
 ## Output format
 
@@ -40,6 +44,28 @@ Two sections in Slack mrkdwn:
 ```
 
 Empty-inbox runs collapse to a single in-voice line.
+
+## RAG ingestion
+
+Each digest is mirrored into Qdrant via the same `/rag-ingest` webhook the bulk `rag-ingest.sh` helper uses — but **without ever writing a file under `~/agent/rag/`**. The content is held in-memory by n8n, chunked, embedded, and upserted directly.
+
+**Why this is safe vs. the bulk script.** `rag-ingest.sh` only walks four hardcoded category directories (`bio`, `articles`, `case-studies`, `projects`) and its orphan-purge pass is category-scoped + exact-match on filename. Because this branch uses category `jira-digests` and filename prefix `jira/…`, the shell script literally has no knowledge of these points and can never purge them, even on a clean re-run with no Jira files on disk.
+
+**Payload contract** (built in **Build RAG Payload**):
+
+```json
+{
+  "category": "jira-digests",
+  "filename": "jira/<ISO8601-execution-start>.md",
+  "content": "---\ntitle: Jira Digest <ISO>\ntags: [jira, digest, work-email]\n---\n\n<digest mrkdwn body>"
+}
+```
+
+- **Filename** uses `$now.toISO()` captured at execution start. Each cron fire (8am + 4pm CT) produces its own document; a retry of the *same* execution overwrites in-place (Qdrant point IDs are deterministic UUIDs seeded by `filename + chunk_index`, see [bugsy-rag-ingest.md](bugsy-rag-ingest.md)). Distinct fires never collide.
+- **Tags** are static. We rely on Qdrant's payload filtering (`category = "jira-digests"`) to scope retrieval, not per-ticket tags — Bugsy's RAG retriever already pulls by semantic similarity, and the digest body itself carries the linkified ticket IDs the embedder will index.
+- **Frontmatter title** carries the run timestamp so a recall like "what did the Jira digest say this morning?" surfaces the right doc.
+
+**Failure mode.** The HTTP node uses `onError: continueRegularOutput`. If the webhook is down, returns non-2xx, or times out, the Slack post still ships — only the RAG enrichment is missed for that fire, and the next fire fills the gap. No retry, no alert.
 
 ## Why `<URL|TEXT>` for ticket IDs
 
@@ -80,9 +106,9 @@ Without this, the LLM tends to flatten the email feed into "what's happening" wi
 
 ## Node reference: Bugsy — Jira Digest (work email)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-13. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
-**Active:** `false` · **Nodes:** 5 · **Execution order:** `v1`
+**Active:** `false` · **Nodes:** 7 · **Execution order:** `v1`
 
 ### Flow
 
@@ -93,10 +119,14 @@ flowchart TD
   aggregate_emails["Aggregate Emails"]
   write_digest["Write Digest"]
   post_to_mulberry_street["Post to Mulberry Street"]
+  build_rag_payload["Build RAG Payload"]
+  post_to_rag_ingest["POST to RAG Ingest"]
   schedule_8am_4pm_ct_m_f --> gmail_get_jira_mail
   gmail_get_jira_mail --> aggregate_emails
   aggregate_emails --> write_digest
   write_digest --> post_to_mulberry_street
+  write_digest --> build_rag_payload
+  build_rag_payload --> post_to_rag_ingest
 ```
 
 ### Nodes
@@ -209,5 +239,37 @@ REQUIREMENTS:
 ```
 
 - **Credential (slackApi):** `Slack - Bugsy`
+
+#### Build RAG Payload
+*Type:* `n8n-nodes-base.code`
+
+```javascript
+const body = $input.first().json.message.content;
+const ts = $now.toISO();
+const filename = `jira/${ts}.md`;
+const frontmatter = `---\ntitle: Jira Digest ${ts}\ntags: [jira, digest, work-email]\n---\n\n`;
+return [{ json: {
+  category: 'jira-digests',
+  filename,
+  content: frontmatter + body,
+} }];
+```
+
+#### POST to RAG Ingest
+*Type:* `n8n-nodes-base.httpRequest`
+
+- **Method:** `POST`
+- **URL:** `https://n8n.coffey.codes/webhook/rag-ingest`
+- **Timeout:** 60000ms
+
+**Headers:**
+- `Content-Type`: `application/json`
+
+**Body:**
+```json
+={{ JSON.stringify($json) }}
+```
+
+- **On error:** `continueRegularOutput`
 
 <!-- NODE-REF:END:bugsy-jira-digest -->

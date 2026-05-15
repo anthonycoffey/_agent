@@ -109,6 +109,38 @@
           "name": "Slack - Bugsy"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.message.content;\nconst ts = $now.toISO();\nconst filename = `jira/${ts}.md`;\nconst frontmatter = `---\\ntitle: Jira Digest ${ts}\\ntags: [jira, digest, work-email]\\n---\\n\\n`;\nreturn [{ json: {\n  category: 'jira-digests',\n  filename,\n  content: frontmatter + body,\n} }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-160, 520],
+      "id": "jira-rag-payload-001",
+      "name": "Build RAG Payload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://n8n.coffey.codes/webhook/rag-ingest",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 60000 }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [120, 520],
+      "id": "jira-rag-post-001",
+      "name": "POST to RAG Ingest",
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -123,7 +155,13 @@
       "main": [[{ "node": "Write Digest", "type": "main", "index": 0 }]]
     },
     "Write Digest": {
-      "main": [[{ "node": "Post to Mulberry Street", "type": "main", "index": 0 }]]
+      "main": [[
+        { "node": "Post to Mulberry Street", "type": "main", "index": 0 },
+        { "node": "Build RAG Payload", "type": "main", "index": 0 }
+      ]]
+    },
+    "Build RAG Payload": {
+      "main": [[{ "node": "POST to RAG Ingest", "type": "main", "index": 0 }]]
     }
   },
   "active": false,

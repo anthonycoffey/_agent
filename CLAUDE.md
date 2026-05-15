@@ -119,7 +119,7 @@ All workflows in the repo are intended to run in n8n (a couple are inactive unti
 | `bugsy-leads-hunter.json` | cron 6:00 CT M-F | 12 SearXNG queries → dedupe → batched scoring → top 5 to `agent.leads` + Slack DM. |
 | `bugsy-research.json` | webhook POST `/bugsy-research` (`/research <target>`) | On-demand prospect brief; SearXNG + homepage fetch → haiku-4-5 → DM the boss, optional Gmail draft. |
 | `bugsy-inbox-watcher.json` | Gmail trigger | Classifies inbound mail (important / needs_reply / scheduling / promo), labels, drafts replies, pings Slack. Currently inactive in n8n. |
-| `bugsy-jira-digest.json` | cron 8:00 + 16:00 CT M-F | Pulls work-email Jira notifications (`jira@ultrasoundai.atlassian.net`), summarizes activity, extracts action items, posts to `#mulberry-street` with ticket IDs linkified as `<URL\|UTT-NNN>` and link unfurl disabled. Uses Bitmotive Gmail credential. |
+| `bugsy-jira-digest.json` | cron 8:00 + 16:00 CT M-F | Pulls work-email Jira notifications (`jira@ultrasoundai.atlassian.net`), summarizes activity, extracts action items, posts to `#mulberry-street` with ticket IDs linkified as `<URL\|UTT-NNN>` and link unfurl disabled. Uses Bitmotive Gmail credential. Parallel branch mirrors each digest into Qdrant via `/rag-ingest` (category `jira-digests`, filename `jira/<ISO>.md`) — best-effort, no disk writes; sits outside the four categories `rag-ingest.sh` walks so it's safe from the orphan purge. |
 
 The earlier per-surface Slack flows (`bugsy-chat.json`, `bugsy-events.json`, `bugsy-slack-rag.json`) and `bugsy-whatsapp.json` were rolled into the unified workflow / removed; see `git log --diff-filter=D -- agent/n8n/workflows/` for their historical shapes.
 
