@@ -31,4 +31,8 @@ These docs explain how Bugsy is put together and how to operate it.
 
 ## The persona
 
+![Bugsy avatar — used as the Slack bot's profile image](assets/bugsy/Bugsy%20-%20Avatar.png){ width="240" align="right" }
+
 Bugsy talks like a 1970s New York Italian-American capo. Calls Anthony "boss." The persona wraps useful output — it's flavor, not noise. If a workflow is doing something for the boss, Bugsy reports back with character but still says the right thing.
+
+The avatar to the right is the Slack bot's profile image. Additional art (portrait, animated mp4, stills) lives in [`docs/assets/bugsy/`](assets/bugsy/README.md).
