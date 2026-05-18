@@ -32,8 +32,9 @@ flowchart LR
 
   NE --> EQ[Embed Question]
   NS --> EQ
-  EQ --> SQ[Search Qdrant]
-  SQ --> BC[Build Context]
+  EQ --> SQ[Search Qdrant unfiltered]
+  SQ --> SQJ[Search Qdrant — Jira Digests]
+  SQJ --> BC[Build Context merge + dedupe]
   BC --> AGT[AI Agent]
   AGT --> RT{Route by source}
   RT -- event --> SLACK[Send Slack Reply]
@@ -57,9 +58,14 @@ Memory uses Postgres Chat Memory (`@n8n/n8n-nodes-langchain.memoryPostgresChat`)
 Pre-retrieval, not tool-based. Build Context bakes the retrieved chunks into the `chatInput` field itself:
 
 ```
-=== KNOWLEDGE BASE ===
-[1] Anthony Coffey Resume
+=== KNOWLEDGE BASE — pre-retrieved relevant context ===
+May include the boss's personal info ..., Jira digest history, ... whatever embed-matched the question. USE the relevant parts directly. Cite specifics ...
+
+[1] Anthony Coffey Resume (bio)
 ...resume chunk text...
+
+[2] Jira Digest 2026-05-14T... (jira-digests)
+...digest chunk text...
 === END KNOWLEDGE BASE ===
 
 === SPEAKER ===
@@ -74,6 +80,19 @@ tell me about my expertise
 This is the bulletproof path because the langchain agent's `systemMessage` field doesn't reliably evaluate `$json` or `$('NodeName')` expressions in this n8n version — putting dynamic content in `chatInput` guarantees the LLM sees it.
 
 The system prompt is purely static persona + an instruction explaining the structured sections.
+
+### Two-stage retrieval (added 2026-05-17 — [BUG-AGENT-001](../specs/active/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md))
+
+Retrieval runs two Qdrant searches sequentially against the same embedded question:
+
+1. **`Search Qdrant`** — unfiltered, `limit: 10`. Picks the best chunks across all categories.
+2. **`Search Qdrant — Jira Digests`** — category-filtered to `jira-digests`, `limit: 10`. Guarantees Jira-archive chunks make it into context even when bigger / longer chunks from other categories would otherwise outrank them.
+
+**`Build Context`** merges both result sets, dedupes by Qdrant point ID (keeping the higher-scoring hit on collision), sorts by score, and renders each entry as `[N] title (category)` so the LLM can see the source type alongside the title. Max ~20 chunks in context after dedup.
+
+**Why sequential vs parallel-with-merge:** sequential adds ~50ms latency (one extra Qdrant round-trip) which is invisible against the multi-second LLM call. It avoids the n8n quirk where a Merge node is needed to gate downstream nodes when fan-out branches are independent. Build Context reads from both upstream nodes by name (`$('Search Qdrant')` and `$('Search Qdrant — Jira Digests')`) regardless of which is the direct ancestor.
+
+**Generalization candidate:** if other categories (projects, articles) also get crowded out, we can add a category-filtered search per under-represented category. Today only `jira-digests` has this treatment.
 
 ## See also
 

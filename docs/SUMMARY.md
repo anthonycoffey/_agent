@@ -11,10 +11,10 @@
 
 - [Plans](specs/plans/)
 - [Active specs](specs/active/)
-    - [BUG-AGENT-001 — Bugsy retrieves only one Jira digest when asked about archived history](specs/active/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md)
 - [Architecture Decision Records (ADRs)](specs/adrs/)
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
+    - [BUG-AGENT-001 — Bugsy retrieves only one Jira digest when asked about archived history](specs/archive/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md)
 
 ## Templates
 
