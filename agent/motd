@@ -26,9 +26,10 @@
    cd ~/agent && docker compose logs -f <service>
    docker exec -it agent-postgres psql -U agent
    docker exec -it agent-ollama ollama list
+   sudo cp ~/bugsy/agent/motd /etc/motd
 
- Next, follow the main guide sections 7-11 to add:
-   Open WebUI, n8n, Langfuse, Caddy reverse proxy, MCP gateway.
+ Next up: MCP server fleet for Bugsy's brain — see SPEC-MCP-001.
+   (Langfuse + Caddy retired from the plan; Open WebUI + n8n shipped.)
 
  You are on the Tailnet as:  agent-vm
  Backups go to:              gs://<project>-agent-backups-01
