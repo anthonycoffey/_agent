@@ -10,7 +10,7 @@ n8n_workflows: [bugsy-jira-digest]
 
 ## Schedule
 
-Cron `0 8,16 * * 1-5` in `America/Chicago` — **8:00 AM and 4:00 PM CT, Mon–Fri**. No state in Postgres; each run queries `newer_than:1d` so there's intentional overlap between runs (the LLM is told to dedupe).
+Cron `0 8,16 * * 1-5` in `America/Chicago` — **8:00 AM and 4:00 PM CT, Mon–Fri**. No state in Postgres; each run queries `newer_than:1d` so there's intentional overlap between runs. **Aggregate Emails** tags each email FRESH or STALE based on a 9h cutoff so the LLM reports only current-window activity and uses older mail as context — see [Temporal accuracy guardrail](#temporal-accuracy-guardrail).
 
 ## Pipeline
 
@@ -25,8 +25,8 @@ flowchart LR
 ```
 
 - **Gmail — Get Jira Mail** uses Gmail search `from:jira@ultrasoundai.atlassian.net newer_than:1d`. `alwaysOutputData: true` so the downstream chain runs even on empty inboxes.
-- **Aggregate Emails** strips HTML, truncates each body to 1200 chars, and folds all messages into one big text block with `--- Email N ---` separators. Outputs `{ count, emails }`. Returns `(no Jira mail in the window)` when the inbox is empty so the LLM can produce a quiet-shift one-liner.
-- **Write Digest** is a single-shot LLM call against `claude-sonnet-4-6` via LiteLLM. System prompt enforces persona (sparing, max two flourishes), output structure (`*Summary*` + `*Action Items*`), and the strict link-format rule for ticket IDs.
+- **Aggregate Emails** strips HTML, truncates each body to 1200 chars, and folds all messages into one big text block with `--- Email N [FRESH|STALE] ---` separators. Tags each email **FRESH** (received at or after `now - 9h`) or **STALE** (older) and surfaces its Gmail `internalDate` as a `Received:` ISO timestamp so the LLM has explicit temporal signal. Prepends a `DIGEST WINDOW` header with the current time and the freshness cutoff. Outputs `{ count, emails, cutoff, now }`. Returns `(no Jira mail in the window)` when the inbox is empty so the LLM can produce a quiet-shift one-liner. See [Temporal accuracy guardrail](#temporal-accuracy-guardrail) for the rationale.
+- **Write Digest** is a single-shot LLM call against `claude-sonnet-4-6` via LiteLLM. System prompt enforces persona (sparing, max two flourishes), output structure (`*Summary*` + `*Action Items*`), the strict link-format rule for ticket IDs, and the FRESH/STALE rule (only FRESH events get reported; STALE emails are context only).
 - **Post to Mulberry Street** sends the result to channel `C0AV83XUSTU` with `unfurl_links: false` and `unfurl_media: false` so the linkified ticket IDs don't blow up the message with Atlassian previews.
 - **Build RAG Payload** (parallel branch) wraps the digest body in YAML frontmatter and builds the `/rag-ingest` request body. See [RAG ingestion](#rag-ingestion) below.
 - **POST to RAG Ingest** fires the request at `https://n8n.coffey.codes/webhook/rag-ingest` with `onError: continueRegularOutput` so a RAG failure can't break the Slack branch (which runs concurrently off the same `Write Digest` output).
@@ -81,15 +81,34 @@ Slack mrkdwn link syntax is `<URL|display>`. When display text is supplied (not 
 
 ## Temporal accuracy guardrail
 
-The system prompt closes with two hard requirements:
+The Gmail filter pulls a 24h window (`newer_than:1d`), so on a typical 8h cron cadence each digest sees the previous 24h of mail — roughly 16h of overlap with the prior digest. Without intervention, the LLM treats every email it sees as "recent activity," which is how closed tickets re-surface in subsequent digests as if they were still in-flight (the closure email survives multiple 24h windows; the closure note recurs in quoted activity tails of later notifications). See [BUG-JIRA-001](../specs/active/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md).
+
+Two-part fix wired into the pipeline:
+
+**1. Aggregate Emails tags each email FRESH or STALE** based on a 9h cutoff (covers the 8h cron gap with buffer):
+
+```
+DIGEST WINDOW
+Now: 2026-05-17T21:00:00.000Z
+Fresh cutoff: 2026-05-17T12:00:00.000Z (events received at or after this time are FRESH; earlier events are STALE)
+
+--- Email 1 [FRESH] ---
+Received: 2026-05-17T18:42:11.000Z
+From: jira@ultrasoundai.atlassian.net
+Subject: [JIRA] (UTT-1234) ...
+Body: ...
+```
+
+**2. The system prompt teaches the LLM how to use the tags** — only FRESH emails describe events to report; STALE emails are context only, used so the LLM can interpret FRESH events that reference them. The REQUIREMENTS block closes with:
 
 ```
 REQUIREMENTS:
-1. THE OUTPUT MUST BE TEMPORALLY ACCURATE, OUTDATED EVENTS SHOULD NOT BE REPORTED AS CURRENT.
-2. LOOK AT TIMESTAMPS TO VERIFY ORDER OF OPERATIONS
+1. THE OUTPUT MUST BE TEMPORALLY ACCURATE. Only [FRESH] emails describe events to report; [STALE] emails are context only. Never report a [STALE]-only event as current activity.
+2. LOOK AT 'Received:' TIMESTAMPS to order events within a ticket. The most recent [FRESH] event wins when describing current state.
+3. CLOSED TICKETS USE PAST TENSE and do not appear in *Action Items* unless the closure itself requires the boss's attention.
 ```
 
-Without this, the LLM tends to flatten the email feed into "what's happening" without respecting that comment timestamps may be hours apart — so an early-morning status change followed by an afternoon revert would get reported as "status changed to X" instead of "X then reverted to Y." Keeping these front-and-center makes the digest a trustworthy timeline view, not a soup of recent verbs.
+The cutoff is hardcoded to 9h. If the cron schedule changes, the cutoff in `Aggregate Emails` (`CUTOFF_HOURS`) needs to change to match (or slightly exceed) the gap between fires.
 
 ## Tuning
 
@@ -106,7 +125,7 @@ Without this, the LLM tends to flatten the email feed into "what's happening" wi
 
 ## Node reference: Bugsy — Jira Digest (work email)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 7 · **Execution order:** `v1`
 
@@ -151,6 +170,15 @@ flowchart TD
 ```javascript
 const emails = $('Gmail — Get Jira Mail').all();
 
+// Digest window: the LLM should treat events within the last 9h as FRESH
+// (covers both the 8h gap between cron fires and a small buffer).
+// Older events are STALE — context from previous digests, not current activity.
+// We keep the 24h Gmail filter to avoid dropping emails on missed runs;
+// the FRESH/STALE tagging lets the LLM decide what to report.
+const now = new Date();
+const CUTOFF_HOURS = 9;
+const cutoff = new Date(now.getTime() - CUTOFF_HOURS * 3600 * 1000);
+
 // Strip HTML so the LLM gets clean text instead of markup
 const stripHtml = (s) => String(s || '')
   .replace(/<style[\s\S]*?<\/style>/gi, ' ')
@@ -163,20 +191,26 @@ const stripHtml = (s) => String(s || '')
   .replace(/\s+/g, ' ')
   .trim();
 
+const header = `DIGEST WINDOW\nNow: ${now.toISOString()}\nFresh cutoff: ${cutoff.toISOString()} (events received at or after this time are FRESH; earlier events are STALE)\n`;
+
 if (!emails.length || (emails.length === 1 && !emails[0].json?.id)) {
-  return [{ json: { count: 0, emails: '(no Jira mail in the window)' } }];
+  return [{ json: { count: 0, emails: header + '\n(no Jira mail in the window)', cutoff: cutoff.toISOString(), now: now.toISOString() } }];
 }
 
 const lines = emails.map((it, i) => {
   const j = it.json || {};
+  const internalMs = j.internalDate ? parseInt(j.internalDate, 10) : null;
+  const received = internalMs ? new Date(internalMs).toISOString() : '?';
+  const isFresh = internalMs ? (internalMs >= cutoff.getTime()) : true;
+  const tag = isFresh ? 'FRESH' : 'STALE';
   const from = (j.from && j.from.text) ? j.from.text : (j.from || j.From || '?');
   const subject = j.subject || j.Subject || '?';
   const snippet = j.snippet || '';
   const body = stripHtml(j.text || j.html || '').substring(0, 1200);
-  return `--- Email ${i + 1} ---\nFrom: ${from}\nSubject: ${subject}\nSnippet: ${snippet}\nBody: ${body}`;
+  return `--- Email ${i + 1} [${tag}] ---\nReceived: ${received}\nFrom: ${from}\nSubject: ${subject}\nSnippet: ${snippet}\nBody: ${body}`;
 }).join('\n\n');
 
-return [{ json: { count: emails.length, emails: lines } }];
+return [{ json: { count: emails.length, emails: header + '\n' + lines, cutoff: cutoff.toISOString(), now: now.toISOString() } }];
 ```
 
 #### Write Digest
@@ -203,6 +237,14 @@ Concrete things the boss has to DO. One bullet per item starting with •. Cover
 - threads where someone is waiting on his input
 - work that obviously needs a ticket but doesn't have one — suggest creating, label '(no ticket yet)'
 
+TEMPORAL CONTEXT — read this CAREFULLY:
+- The input starts with a 'DIGEST WINDOW' block that gives the current time and the 'Fresh cutoff' time. Use these as ground truth.
+- Each email is tagged [FRESH] or [STALE] in its header. [FRESH] = received at or after the cutoff (this digest's window). [STALE] = received earlier (already covered in a prior digest, or unrelated to this window).
+- Each email also has an explicit 'Received:' ISO timestamp — use it when ordering events for one ticket.
+- ONLY [FRESH] emails describe activity to report. [STALE] emails are CONTEXT — they exist so you can interpret [FRESH] events that reference them (e.g. 'the ticket Bob closed yesterday was reopened today'). Do NOT include a [STALE]-only event in *Summary* or *Action Items*.
+- Inside any email body, Jira often quotes prior comments and historical activity. The 'Received:' timestamp applies to the EMAIL, not to the events quoted inside it. If a body mentions a status change that you've already seen in a [STALE] email, treat it as old context, not new activity.
+- A ticket whose most recent [FRESH] event is a status change to Done / Closed / Resolved / Cancelled was COMPLETED. Use past tense ('closed UTT-NNN at HH:MM'). Do NOT include closed tickets as action items unless the closure itself demands a response (e.g. a ticket assigned to the boss got closed by someone else unexpectedly).
+
 FORMATTING RULES — strict:
 - EVERY ticket ID (UTT-NNN) must be a hyperlink in this exact form: <https://ultrasoundai.atlassian.net/browse/UTT-NNN|UTT-NNN>. No bare 'UTT-123' anywhere.
 - Slack markdown only: *bold*, _italic_, `code`, bullets with •.
@@ -210,13 +252,14 @@ FORMATTING RULES — strict:
 - No closing signature.
 - Keep it tight. If something's repeated across emails (same comment quoted back), mention once.
 
-If the input is '(no Jira mail in the window)': respond with a one-liner in voice, e.g. 'Quiet shift, boss — nothin' worth ya time on the Jira front.'
+If there are no [FRESH] emails at all (every email is [STALE] or the input says '(no Jira mail in the window)'): respond with a one-liner in voice, e.g. 'Quiet shift, boss — nothin' worth ya time on the Jira front.'
 
 Output the message body ONLY — no preamble, no 'Here is your digest:'.
 
 REQUIREMENTS:
-1. THE OUTPUT MUST BE TEMPORALLY ACCURATE, OUTDATED EVENTS SHOULD NOT BE REPORTED AS CURRENT.
-2. LOOK AT TIMESTAMPS TO VERIFY ORDER OF OPERATIONS
+1. THE OUTPUT MUST BE TEMPORALLY ACCURATE. Only [FRESH] emails describe events to report; [STALE] emails are context only. Never report a [STALE]-only event as current activity.
+2. LOOK AT 'Received:' TIMESTAMPS to order events within a ticket. The most recent [FRESH] event wins when describing current state.
+3. CLOSED TICKETS USE PAST TENSE and do not appear in *Action Items* unless the closure itself requires the boss's attention.
 ```
 
 **USER message:**
