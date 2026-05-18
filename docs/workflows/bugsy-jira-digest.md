@@ -191,6 +191,29 @@ const stripHtml = (s) => String(s || '')
   .replace(/\s+/g, ' ')
   .trim();
 
+// Try several places Gmail node v2.1 might expose the receive timestamp,
+// in priority order. The canonical field is `internalDate` (ms since epoch
+// as string) but it isn't always populated; fall back to the parsed `date`
+// header, then to scanning the raw headers array, then to now-as-last-resort.
+const extractMs = (j) => {
+  if (j.internalDate) {
+    const n = parseInt(j.internalDate, 10);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  if (j.date) {
+    const n = Date.parse(j.date);
+    if (Number.isFinite(n)) return n;
+  }
+  if (Array.isArray(j.headers)) {
+    const h = j.headers.find(x => x && x.name && x.name.toLowerCase() === 'date');
+    if (h && h.value) {
+      const n = Date.parse(h.value);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+};
+
 const header = `DIGEST WINDOW\nNow: ${now.toISOString()}\nFresh cutoff: ${cutoff.toISOString()} (events received at or after this time are FRESH; earlier events are STALE)\n`;
 
 if (!emails.length || (emails.length === 1 && !emails[0].json?.id)) {
@@ -199,8 +222,11 @@ if (!emails.length || (emails.length === 1 && !emails[0].json?.id)) {
 
 const lines = emails.map((it, i) => {
   const j = it.json || {};
-  const internalMs = j.internalDate ? parseInt(j.internalDate, 10) : null;
-  const received = internalMs ? new Date(internalMs).toISOString() : '?';
+  const internalMs = extractMs(j);
+  const received = internalMs ? new Date(internalMs).toISOString() : 'unknown';
+  // If we couldn't extract a timestamp at all, default to FRESH so the email
+  // still surfaces — the LLM will see 'Received: unknown' and treat the email
+  // as in-window but flag the missing temporal signal in its output.
   const isFresh = internalMs ? (internalMs >= cutoff.getTime()) : true;
   const tag = isFresh ? 'FRESH' : 'STALE';
   const from = (j.from && j.from.text) ? j.from.text : (j.from || j.From || '?');

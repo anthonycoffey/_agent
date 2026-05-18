@@ -77,7 +77,7 @@ flowchart LR
 
 ## Node reference: Bugsy — RAG Query
 
-> Auto-generated from `agent/n8n/workflows/bugsy-rag-query.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-rag-query.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `true` · **Nodes:** 8 · **Execution order:** `v1`
 

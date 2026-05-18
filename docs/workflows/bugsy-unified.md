@@ -103,9 +103,9 @@ Retrieval runs two Qdrant searches sequentially against the same embedded questi
 
 ## Node reference: Bugsy
 
-> Auto-generated from `agent/n8n/workflows/bugsy.json` on 2026-05-15. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
-**Active:** `false` · **Nodes:** 19 · **Execution order:** `v1`
+**Active:** `false` · **Nodes:** 20 · **Execution order:** `v1`
 
 ### Flow
 
@@ -123,6 +123,7 @@ flowchart TD
   normalize_slash["Normalize Slash"]
   embed_question["Embed Question"]
   search_qdrant["Search Qdrant"]
+  search_qdrant_jira_digests["Search Qdrant — Jira Digests"]
   build_context["Build Context"]
   ai_agent["AI Agent"]
   postgres_chat_memory["Postgres Chat Memory"]
@@ -141,7 +142,8 @@ flowchart TD
   slash_has_text --> normalize_slash
   normalize_slash --> embed_question
   embed_question --> search_qdrant
-  search_qdrant --> build_context
+  search_qdrant --> search_qdrant_jira_digests
+  search_qdrant_jira_digests --> build_context
   build_context --> ai_agent
   postgres_chat_memory -->|ai_memory| ai_agent
   openai_chat_model -->|ai_languageModel| ai_agent
@@ -256,20 +258,53 @@ flowchart TD
 
 **Body:**
 ```json
-={{ JSON.stringify({ vector: $json.embedding, limit: 15, with_payload: true }) }}
+={{ JSON.stringify({ vector: $json.embedding, limit: 10, with_payload: true }) }}
+```
+
+#### Search Qdrant — Jira Digests
+*Type:* `n8n-nodes-base.httpRequest`
+
+- **Method:** `POST`
+- **URL:** `http://qdrant:6333/collections/personal_knowledge/points/search`
+- **Timeout:** 30000ms
+
+**Body:**
+```json
+={{ JSON.stringify({ vector: $('Embed Question').first().json.embedding, limit: 10, with_payload: true, filter: { must: [ { key: 'category', match: { value: 'jira-digests' } } ] } }) }}
 ```
 
 #### Build Context
 *Type:* `n8n-nodes-base.code`
 
 ```javascript
-const search = $input.first().json;
-const hits = (search.result || []).map(r => ({
+// Pull from both retrieval branches: unfiltered top-N + jira-digests-filtered top-N.
+// Dedupe by Qdrant point id; on collision keep the higher-scoring hit.
+// Sort by score so the strongest matches lead the context block.
+const general = $('Search Qdrant').first().json || {};
+const jira = $('Search Qdrant — Jira Digests').first().json || {};
+
+const projectHit = (r) => ({
+  id: r.id,
   text: r.payload.text,
   title: r.payload.title,
   category: r.payload.category,
-  score: Math.round(r.score * 100) / 100
-}));
+  score: r.score,
+});
+
+const raw = [
+  ...(general.result || []).map(projectHit),
+  ...(jira.result || []).map(projectHit),
+];
+
+const byId = new Map();
+for (const h of raw) {
+  const existing = byId.get(h.id);
+  if (!existing || h.score > existing.score) byId.set(h.id, h);
+}
+
+const hits = [...byId.values()]
+  .sort((a, b) => b.score - a.score)
+  .map(h => ({ ...h, score: Math.round(h.score * 100) / 100 }));
 
 // Whichever Normalize node didn't run will throw on access, so try each.
 let src = {};
@@ -280,7 +315,7 @@ if (!src || !src.chatInput) {
 src = src || {};
 
 const contextBlock = hits.length
-  ? hits.map((c, i) => '[' + (i+1) + '] ' + c.title + '\n' + c.text).join('\n\n')
+  ? hits.map((c, i) => '[' + (i+1) + '] ' + c.title + ' (' + c.category + ')\n' + c.text).join('\n\n')
   : '(none)';
 
 const sources = [...new Set(hits.map(h => h.title))];
@@ -293,8 +328,8 @@ const userId = src.userId || '';
 // field don't reliably resolve (some versions ignore them), so this
 // is the bulletproof path.
 const augmented = [
-  '=== KNOWLEDGE BASE — boss\'s personal info pulled fresh for this question ===',
-  'When the question relates to the boss (skills, background, projects, history, preferences), USE the content below directly. Cite specifics. Do NOT say "the knowledge base is empty" if there is content here — there is.',
+  '=== KNOWLEDGE BASE — pre-retrieved relevant context ===',
+  'May include the boss\'s personal info (resume, projects, writing), Jira digest history, or other indexed material — whatever embed-matched the question. USE the relevant parts directly. Cite specifics (digest dates, ticket IDs, project names). If the question seems broader than the content shown, acknowledge partial coverage — never claim the archive doesn\'t exist when there\'s content here.',
   '',
   contextBlock,
   '',
@@ -342,7 +377,7 @@ Rules:
 - A little dry humor is on-brand; cartoony goofiness is not. Bugsy ain't nobody's clown, capiche?
 
 The USER MESSAGE you receive will be wrapped with structured sections:
-- KNOWLEDGE BASE: pre-retrieved info about the boss. Use it when the question is about them. If the section says '(none)', proceed without it.
+- KNOWLEDGE BASE: pre-retrieved relevant context (may include personal info, Jira digest history, project notes — whatever embed-matched the question). Each entry is labeled with its category in parentheses, e.g. (jira-digests), (bio), (projects). Use whatever's relevant. If the section says '(none)', proceed without it. If it has content but the question is broader than what's shown (e.g. 'all of May's Jira digests' but only two appear), acknowledge the partial coverage from the archive rather than claiming the archive doesn't exist. Example: 'Got two May digests on file, boss — the 14th and the 21st. Want me to walk through 'em?'
 - SPEAKER: who's talking to you (use their name/mention naturally).
 - USER QUESTION: what they actually asked. Answer this.
 

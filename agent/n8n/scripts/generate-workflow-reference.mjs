@@ -47,17 +47,22 @@ function fence(lang, body) {
 }
 
 function readFrontmatter(content) {
-  const m = content.match(/^---\n([\s\S]*?)\n---\n?/);
+  // CRLF-tolerant. On Windows checkouts (no .gitattributes) tracked .md files
+  // arrive with CRLF, but Node-written files use LF — accept either so the
+  // script doesn't mistake CRLF docs as having no frontmatter and spuriously
+  // create stub copies. See BUG-DOCS-001.
+  const m = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/);
   if (!m) return { fm: {}, body: content, rawHead: '' };
   const fm = {};
-  for (const line of m[1].split('\n')) {
+  for (const line of m[1].split(/\r?\n/)) {
     const kv = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
     if (!kv) continue;
     const [, k, v] = kv;
-    const arr = v.match(/^\[([^\]]*)\]$/);
+    const trimmedV = v.replace(/\s+$/, '');
+    const arr = trimmedV.match(/^\[([^\]]*)\]$/);
     fm[k] = arr
       ? arr[1].split(',').map((x) => x.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean)
-      : v.trim().replace(/^['"]|['"]$/g, '');
+      : trimmedV.replace(/^['"]|['"]$/g, '');
   }
   return { fm, body: content.slice(m[0].length), rawHead: m[0] };
 }

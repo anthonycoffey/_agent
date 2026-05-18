@@ -15,6 +15,7 @@
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
     - [BUG-AGENT-001 — Bugsy retrieves only one Jira digest when asked about archived history](specs/archive/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md)
+    - [BUG-DOCS-001 — Workflow reference generator creates duplicate stub docs on Windows](specs/archive/BUG-DOCS-001-workflow-reference-generator-creates-duplicate-stubs.md)
 
 ## Templates
 
