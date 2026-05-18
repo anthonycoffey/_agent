@@ -1,0 +1,75 @@
+{
+  "name": "Bugsy — RAG Refresh Notify",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-refresh-notify",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [-800, 300],
+      "id": "rag-refresh-webhook-001",
+      "name": "Webhook",
+      "webhookId": "bugsy-rag-refresh-notify-001"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Receive the JSON payload posted by ~/agent/scripts/rag-refresh.sh and\n// build a one-line Slack mrkdwn summary. The payload shape:\n//   { summary: 'pulled:2 up-to-date:1 failed:0 failed_repos:[periscope]',\n//     log_path: '/home/agent/agent/logs/rag-refresh/...log',\n//     ts: '2026-05-18T09:00:00Z' }\n// On success the summary is one terse line. On failure (failed>0) we add\n// the log path so the boss can SSH and tail it without guessing the filename.\nconst raw = $input.first().json;\nconst body = raw.body || raw;\nconst summary = body.summary || '(no summary)';\nconst logPath = body.log_path || '';\nconst ts = body.ts || new Date().toISOString();\n\n// Parse `failed:N` out of the summary so we know whether to escalate the tone.\nconst failedMatch = summary.match(/failed:(\\d+)/);\nconst failedCount = failedMatch ? parseInt(failedMatch[1], 10) : 0;\nconst hadFailures = failedCount > 0;\n\nconst marker = hadFailures ? ':warning:' : ':white_check_mark:';\nconst label = hadFailures ? '*rag-refresh* — needs a look' : '*rag-refresh*';\nconst tail = hadFailures && logPath ? `\\nlog: \\`${logPath}\\`` : '';\n\nconst text = `${marker} ${label}\\n\\`${summary}\\` _at ${ts}_${tail}`;\n\nreturn [{ json: { text } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-560, 300],
+      "id": "rag-refresh-format-001",
+      "name": "Format Message"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AV83XUSTU",
+          "mode": "id",
+          "cachedResultName": "mulberry-street"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {
+          "link_names": true,
+          "mrkdwn": true,
+          "unfurl_links": false,
+          "unfurl_media": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [-320, 300],
+      "id": "rag-refresh-slack-post-001",
+      "name": "Post Summary",
+      "webhookId": "bugsy-rag-refresh-slack-001",
+      "credentials": {
+        "slackApi": {
+          "id": "TIP9AbQBq7X5Qidd",
+          "name": "Slack - Bugsy"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Format Message", "type": "main", "index": 0 }]]
+    },
+    "Format Message": {
+      "main": [[{ "node": "Post Summary", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

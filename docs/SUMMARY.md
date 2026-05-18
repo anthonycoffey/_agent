@@ -11,6 +11,7 @@
 
 - [Plans](specs/plans/)
 - [Active specs](specs/active/)
+    - [SPEC-RAG-001 — Daily refresh of RAG source repos via cron + ingest](specs/active/SPEC-RAG-001-daily-source-repo-refresh.md)
 - [Architecture Decision Records (ADRs)](specs/adrs/)
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
@@ -47,6 +48,7 @@
 - [Job board](workflows/job-board.md)
 - [RAG ingest](workflows/rag-ingest.md)
 - [RAG query](workflows/rag-query.md)
+- [RAG refresh notify](workflows/bugsy-rag-refresh-notify.md)
 - [Inbox watcher](workflows/bugsy-inbox-watcher.md)
 - [Jira digest](workflows/bugsy-jira-digest.md)
 - [Leads hunter](workflows/bugsy-leads-hunter.md)

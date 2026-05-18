@@ -84,6 +84,7 @@ nav:
       - workflows/job-board.md
       - workflows/rag-ingest.md
       - workflows/rag-query.md
+      - workflows/bugsy-rag-refresh-notify.md
       - workflows/bugsy-inbox-watcher.md
       - workflows/bugsy-jira-digest.md
       - workflows/bugsy-leads-hunter.md
@@ -92,6 +93,7 @@ nav:
       - operations/deploy.md
       - operations/n8n-import.md
       - operations/workflow-reference-generator.md
+      - operations/rag-refresh.md
       - operations/troubleshooting.md
   - Reference:
       - reference/env-vars.md
