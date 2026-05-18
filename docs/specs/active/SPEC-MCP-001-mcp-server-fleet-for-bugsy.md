@@ -1,7 +1,7 @@
 ---
 id: SPEC-MCP-001
 title: "MCP server fleet for Bugsy's brain and n8n workflows"
-status: ready
+status: in-progress
 created: 2026-05-18
 author: Anthony Coffey
 reviewers: []
@@ -9,8 +9,7 @@ affected_repos: [_agent]
 ---
 
 <!--
-2026-05-18 — Plan approved. Status flipped draft → ready. Picked up
-for implementation in Phase 0 (Atlassian MCP de-risk) when work starts.
+2026-05-18 — Plan approved. Status flipped draft → ready.
 
 Locked-in scoping decisions (from the 2026-05-18 conversation):
 - Consumers: Bugsy's AI Agent (bugsy.json) + n8n workflows on the VM
@@ -20,6 +19,32 @@ Locked-in scoping decisions (from the 2026-05-18 conversation):
 - Read-only first; write surfaces come in a follow-up spec
 - No Cloudflare Tunnel exposure (agent-net only)
 - Langfuse + Caddy explicitly retired from the older plan
+
+2026-05-18 — Phase 0 implementation landed (pending VM verification).
+Status flipped ready → in-progress. Research confirmed the moving parts:
+
+- MCP server image: ghcr.io/sooperset/mcp-atlassian:latest, run with
+  `--transport sse --port 9000`. Env vars: JIRA_URL, JIRA_USERNAME,
+  JIRA_API_TOKEN, READ_ONLY_MODE=true.
+- n8n node: @n8n/n8n-nodes-langchain.mcpClientTool, typeVersion 1.2.
+  Parameters used: endpointUrl, serverTransport='sse', authentication='none',
+  include='all'. Output goes via NodeConnectionTypes.AiTool → AI Agent.
+- n8n env var: N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true (added to the
+  n8n service block in docker-compose.yml) so the AI Agent shows the
+  ai_tool connection slot.
+- Architectural choice for Phase 0: Pattern A (self-hosted container on
+  agent-net) over Pattern B (remote mcp.atlassian.com) — simpler auth
+  (API token vs OAuth), no Cloudflare Tunnel involvement, fits the
+  existing docker-compose pattern.
+
+Files touched:
+  agent/docker-compose.yml                    + mcp-atlassian service,
+                                              + N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE
+  agent/env.template                          + ATLASSIAN_URL, EMAIL, TOKEN block
+  agent/n8n/workflows/bugsy.json              + MCP Client Tool node,
+                                              + ai_tool connection,
+                                              + TOOLS section in agent prompt
+  docs/workflows/bugsy-unified.md             auto-gen refresh
 -->
 
 ## Reviewer Notes

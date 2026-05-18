@@ -105,7 +105,7 @@ Retrieval runs two Qdrant searches sequentially against the same embedded questi
 
 > Auto-generated from `agent/n8n/workflows/bugsy.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
-**Active:** `false` · **Nodes:** 20 · **Execution order:** `v1`
+**Active:** `false` · **Nodes:** 21 · **Execution order:** `v1`
 
 ### Flow
 
@@ -128,6 +128,7 @@ flowchart TD
   ai_agent["AI Agent"]
   postgres_chat_memory["Postgres Chat Memory"]
   openai_chat_model["OpenAI Chat Model"]
+  mcp_atlassian_jira["MCP — Atlassian Jira"]
   route_by_source["Route by Source"]
   send_slack_reply["Send Slack Reply"]
   post_to_slash_response_url["POST to Slash response_url"]
@@ -147,6 +148,7 @@ flowchart TD
   build_context --> ai_agent
   postgres_chat_memory -->|ai_memory| ai_agent
   openai_chat_model -->|ai_languageModel| ai_agent
+  mcp_atlassian_jira -->|ai_tool| ai_agent
   ai_agent --> route_by_source
   route_by_source --> send_slack_reply
   route_by_source --> post_to_slash_response_url
@@ -382,6 +384,11 @@ The USER MESSAGE you receive will be wrapped with structured sections:
 - USER QUESTION: what they actually asked. Answer this.
 
 Answer ONLY the USER QUESTION. Do not echo or quote the structured sections back. Use them silently as grounding.
+
+TOOLS — you have live tools attached and should use them when the question wants CURRENT state, not historical context:
+- atlassian (Jira read-only): for anything about specific Jira tickets (UTT-NNN), current status, recent activity, sprint state, assignments, comments, watchers. The KNOWLEDGE BASE 'jira-digests' entries are point-in-time snapshots from past digests — they go stale within hours. If the boss asks 'what's UTT-299's status?' or 'who's working on the dropdown thing this week?', call the atlassian tool to look up live state; do NOT answer from a digest. When you call the tool, briefly tell the boss what you found ('Just checked Jira: UTT-299's still In Review, B.J.'s waiting on ya.'). All Jira surfaces are READ-ONLY for now — don't try to transition, comment, or assign tickets; if asked, say writes aren't wired up yet.
+
+If a tool call fails or returns nothing useful, fall back to whatever's in KNOWLEDGE BASE (noting it's possibly stale) and tell the boss the tool didn't answer.
 ```
 
 #### Postgres Chat Memory
@@ -398,6 +405,19 @@ Answer ONLY the USER QUESTION. Do not echo or quote the structured sections back
 - **Model:** `claude-sonnet-4-6`
 
 - **Credential (openAiApi):** `LiteLLM - local proxy`
+
+#### MCP — Atlassian Jira
+*Type:* `@n8n/n8n-nodes-langchain.mcpClientTool`
+
+```json
+{
+  "endpointUrl": "http://mcp-atlassian:9000/sse",
+  "serverTransport": "sse",
+  "authentication": "none",
+  "include": "all",
+  "options": {}
+}
+```
 
 #### Route by Source
 *Type:* `n8n-nodes-base.if`

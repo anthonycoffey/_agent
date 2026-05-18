@@ -160,6 +160,9 @@ services:
       N8N_RUNNERS_TASK_TIMEOUT: "300"
       N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
       NODE_FUNCTION_ALLOW_EXTERNAL: axios
+      # Required for the langchain MCP Client Tool node to plug into AI Agents.
+      # Built-in toolmcp variant; without this the connection slot is hidden.
+      N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE: "true"
       LITELLM_KEY: ${WEBUI_SECRET_KEY}
       EVOLUTION_API_URL: http://evolution-api:8080
       EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
@@ -246,4 +249,26 @@ services:
         read_only: true
         bind:
           create_host_path: false
+    networks: [agent-net]
+
+  # ---------- MCP layer ----------
+  #
+  # Model Context Protocol servers — give Bugsy's AI Agent and n8n workflows
+  # live read access to external systems instead of relying on stale RAG-cached
+  # state. Each MCP exposes SSE transport on port 9000 inside agent-net.
+  # See SPEC-MCP-001 for the architecture + rollout plan.
+
+  # Phase 0 — Atlassian (Jira). Read-only via READ_ONLY_MODE + the API token's
+  # scope. SSE endpoint reachable as http://mcp-atlassian:9000/sse from inside
+  # agent-net (n8n MCP Client Tool node points here).
+  mcp-atlassian:
+    image: ghcr.io/sooperset/mcp-atlassian:latest
+    container_name: agent-mcp-atlassian
+    restart: unless-stopped
+    command: ["--transport", "sse", "--port", "9000"]
+    environment:
+      JIRA_URL: ${ATLASSIAN_URL}
+      JIRA_USERNAME: ${ATLASSIAN_EMAIL}
+      JIRA_API_TOKEN: ${ATLASSIAN_API_TOKEN}
+      READ_ONLY_MODE: "true"
     networks: [agent-net]
