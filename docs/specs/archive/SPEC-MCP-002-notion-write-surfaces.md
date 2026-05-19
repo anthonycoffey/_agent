@@ -1,8 +1,9 @@
 ---
 id: SPEC-MCP-002
 title: "Notion write surfaces for Bugsy (page creation)"
-status: in-progress
+status: complete
 created: 2026-05-19
+completed: 2026-05-19
 author: Anthony Coffey
 reviewers: []
 affected_repos: [_agent]
@@ -15,6 +16,16 @@ parent_spec: SPEC-MCP-001
     fallback. No single hardcoded default parent.
   - Title format: `<topic> — YYYY-MM-DD` (no Bugsy prefix).
   - No confirmation gate — Notion version history is the undo path.
+
+2026-05-19 — Verified end-to-end. Operator expanded the Bugsy Notion
+integration's Capabilities tab (Read + Insert), imported the updated
+workflow, and Bugsy created a Notion page from a Slack request. Bugsy's
+own words: "Page creation is wired up and verified — we just proved it.
+But it's create-only for now, boss." The asymmetry (insert without
+update) is the trigger for SPEC-MCP-003 — full editing capabilities,
+drafted immediately after this spec archived.
+
+Spec marked complete and moved to specs/archive/.
 
 Status flipped draft → in-progress. Implementation is a system-prompt
 edit + a one-line Notion-side capability change. No new container,
