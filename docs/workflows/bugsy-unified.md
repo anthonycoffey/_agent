@@ -105,7 +105,7 @@ Retrieval runs two Qdrant searches sequentially against the same embedded questi
 
 > Auto-generated from `agent/n8n/workflows/bugsy.json` on 2026-05-19. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
-**Active:** `false` · **Nodes:** 22 · **Execution order:** `v1`
+**Active:** `false` · **Nodes:** 23 · **Execution order:** `v1`
 
 ### Flow
 
@@ -130,6 +130,7 @@ flowchart TD
   openai_chat_model["OpenAI Chat Model"]
   mcp_atlassian_jira["MCP — Atlassian Jira"]
   mcp_github["MCP — GitHub"]
+  mcp_notion["MCP — Notion"]
   route_by_source["Route by Source"]
   send_slack_reply["Send Slack Reply"]
   post_to_slash_response_url["POST to Slash response_url"]
@@ -151,6 +152,7 @@ flowchart TD
   openai_chat_model -->|ai_languageModel| ai_agent
   mcp_atlassian_jira -->|ai_tool| ai_agent
   mcp_github -->|ai_tool| ai_agent
+  mcp_notion -->|ai_tool| ai_agent
   ai_agent --> route_by_source
   route_by_source --> send_slack_reply
   route_by_source --> post_to_slash_response_url
@@ -390,6 +392,7 @@ Answer ONLY the USER QUESTION. Do not echo or quote the structured sections back
 TOOLS — you have live tools attached and should use them when the question wants CURRENT state, not historical context:
 - atlassian (Jira read-only): for anything about specific Jira tickets (UTT-NNN), current status, recent activity, sprint state, assignments, comments, watchers. The KNOWLEDGE BASE 'jira-digests' entries are point-in-time snapshots from past digests — they go stale within hours. If the boss asks 'what's UTT-299's status?' or 'who's working on the dropdown thing this week?', call the atlassian tool to look up live state; do NOT answer from a digest. When you call the tool, briefly tell the boss what you found ('Just checked Jira: UTT-299's still In Review, B.J.'s waiting on ya.'). All Jira surfaces are READ-ONLY for now — don't try to transition, comment, or assign tickets; if asked, say writes aren't wired up yet.
 - github (read-only): for anything about the boss's repos — pull requests, issues, file contents, recent commits, code search, repo metadata. Use it when the boss asks 'what PRs are open on coffey.codes?', 'what's that issue about the menu bug?', 'show me the latest commit to periscope', 'who's reviewing my open PRs?', etc. The boss's primary repos include anthonycoffey/coffey.codes, anthonycoffey/_agent (this stack), and anthonycoffey/periscope. When you call the tool, briefly cite what you pulled ('Pulled GitHub: #42 on coffey.codes is open, waiting on review since Friday.'). READ-ONLY — don't try to open PRs, comment on issues, or push commits; say writes aren't wired up yet.
+- notion (read-only): for anything in the boss's Notion workspace — his Trello-style kanban project board, editorial/SEO content (calendars, content disposition, content strategy), personal notes and journal, reference/wiki docs. Use it whenever the question wants CURRENT Notion content: 'what's queued in next week's editorial calendar?', 'what's on my kanban this week?', 'what did I journal about Friday?', 'find my notes on X', etc. The KNOWLEDGE BASE may contain ingested Notion snapshots from the daily refresh cron — those are point-in-time and stale within hours, so prefer the live tool when the question is about current state. The Notion API surfaces pages, blocks, and 'data sources' (databases). When you call the tool, cite specifically ('Pulled Notion — editorial calendar shows three articles queued for next week: ...'). READ-ONLY for now — don't try to create pages, edit blocks, move kanban cards, or update properties; say writes aren't wired up yet.
 
 If a tool call fails or returns nothing useful, fall back to whatever's in KNOWLEDGE BASE (noting it's possibly stale) and tell the boss the tool didn't answer.
 ```
@@ -429,11 +432,28 @@ If a tool call fails or returns nothing useful, fall back to whatever's in KNOWL
 {
   "endpointUrl": "http://mcp-github:8082/readonly",
   "serverTransport": "httpStreamable",
-  "authentication": "none",
+  "authentication": "bearerAuth",
   "include": "all",
   "options": {}
 }
 ```
+
+- **Credential (httpBearerAuth):** `GitHub MCP - PAT`
+
+#### MCP — Notion
+*Type:* `@n8n/n8n-nodes-langchain.mcpClientTool`
+
+```json
+{
+  "endpointUrl": "http://mcp-notion:3000/mcp",
+  "serverTransport": "httpStreamable",
+  "authentication": "bearerAuth",
+  "include": "all",
+  "options": {}
+}
+```
+
+- **Credential (httpBearerAuth):** `Notion MCP - Bearer`
 
 #### Route by Source
 *Type:* `n8n-nodes-base.if`

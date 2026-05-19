@@ -291,3 +291,22 @@ services:
     environment:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN_MCP}
     networks: [agent-net]
+
+  # Phase 1.3 — Notion. Streamable HTTP transport on port 3000 (the server's
+  # default). MCP endpoint at /mcp requires per-request Bearer auth — same
+  # shape as GitHub MCP. Two tokens at play:
+  #   NOTION_TOKEN     → server uses to call the Notion API on each tool
+  #                      invocation (the integration token).
+  #   AUTH_TOKEN       → MCP server uses to authenticate n8n's incoming
+  #                      requests at /mcp.
+  # Read-only is enforced at the Notion integration's Capabilities tab
+  # ("Read content" only), not via a server flag.
+  mcp-notion:
+    image: mcp/notion:latest
+    container_name: agent-mcp-notion
+    restart: unless-stopped
+    command: ["--transport", "http", "--port", "3000"]
+    environment:
+      NOTION_TOKEN: ${NOTION_INTEGRATION_TOKEN}
+      AUTH_TOKEN: ${NOTION_MCP_BEARER_TOKEN}
+    networks: [agent-net]

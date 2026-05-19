@@ -20,6 +20,24 @@ Locked-in scoping decisions (from the 2026-05-18 conversation):
 - No Cloudflare Tunnel exposure (agent-net only)
 - Langfuse + Caddy explicitly retired from the older plan
 
+2026-05-19 — P1 lineup amended. Slack swapped out for Notion. Rationale:
+- Notion is where the boss maintains his kanban project board (Trello-style
+  homegrown setup), editorial/SEO calendar, personal journal, and reference
+  wiki. Those pages already appear as RAG sources in Bugsy chat responses
+  but go stale within hours of the daily refresh — same staleness pattern
+  as the Jira digest case Phase 0 solved.
+- Slack has a more complicated tradeoff (token scopes, channel-membership
+  semantics, search:read requiring a user-token app). Lower marginal value
+  given Bugsy already posts to Slack and gets Events API webhooks.
+- Slack moves to P2 (follow-up spec) if read-history workflows become a
+  recurring ask.
+
+Updated P1 lineup, in priority order:
+  1. Atlassian (Jira) — shipped, verified (Phase 0)
+  2. GitHub — shipped, verified (Phase 1.2)
+  3. Notion — in progress (Phase 1.3)
+  4. GSC / GA4 / Bing bundle (Phase 1.4)
+
 2026-05-18 — Phase 0 verified end-to-end. Bugsy successfully answered
 a live Jira ticket query in Slack using the atlassian MCP tool (not
 RAG-cached digest content). Follow-up tweaks landed alongside:
@@ -68,6 +86,35 @@ GitHub MCP wired in. Notable differences from Phase 0:
   new MCP may have a different auth model — sooperset baked auth
   into env vars; github-mcp-server expects per-request Bearer.
   Check the server's HTTP mode docs first; assume nothing.
+
+2026-05-19 — Phase 1.3 implementation landed (pending VM verification).
+Notion MCP wired in. Notable details:
+- Image: mcp/notion:latest (the official Docker Hub image from
+  makenotion/notion-mcp-server). Started with
+  `--transport http --port 3000`. Streamable HTTP transport (matches
+  github-mcp-server's shape — confirmed via source inspection of
+  scripts/start-server.ts).
+- TWO tokens needed (gotcha worth noting): NOTION_INTEGRATION_TOKEN
+  for the server's outbound calls to the Notion API, AND a separate
+  AUTH_TOKEN bearer for n8n's inbound requests at /mcp. Generated the
+  latter with `openssl rand -hex 32` and stored as
+  NOTION_MCP_BEARER_TOKEN in .env. The n8n credential
+  ('Notion MCP - Bearer') holds the same value.
+- Read-only enforcement: NOT a server flag (unlike github-mcp-server's
+  --read-only). Notion controls this via the integration's Capabilities
+  tab — set the integration to "Read content" only, uncheck
+  Update/Insert/Delete. Pages/databases must also be explicitly
+  connected to the integration (per-resource access, like a GitHub
+  fine-grained PAT's repo scope).
+- Endpoint URL: http://mcp-notion:3000/mcp (Streamable HTTP MCP at
+  /mcp, not the root path).
+
+Pending: VM-side verification — create the Notion internal integration,
+grant page access to the relevant pages/databases, generate the bearer
+token, set both env vars, bring up mcp-notion, create the n8n
+credential, import bugsy.json, smoke-test a chat query that touches
+live Notion content (editorial calendar, kanban board status, recent
+journal entry, etc).
 
 2026-05-18 — Phase 0 implementation landed (pending VM verification).
 Status flipped ready → in-progress. Research confirmed the moving parts:
