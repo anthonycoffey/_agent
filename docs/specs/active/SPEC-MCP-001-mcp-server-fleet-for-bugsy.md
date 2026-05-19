@@ -116,6 +116,19 @@ credential, import bugsy.json, smoke-test a chat query that touches
 live Notion content (editorial calendar, kanban board status, recent
 journal entry, etc).
 
+2026-05-19 — Phase 1.3 verified end-to-end. Bugsy answered a multi-tool
+query in Slack ('open PRs + top-level Notion pages, then summarize')
+that pulled live data from BOTH the github and notion tools in one
+response — 5 open PRs across docs-meta + valar-app, 4 top-level Notion
+pages (Resources, Project Board, Music, Bitmotive) with their emojis
+and acknowledgment of has_more pagination. Sources line still surfaced
+RAG content alongside, no regression on other categories. The agent
+also correctly declined the user's follow-up request to create a
+summary page, citing the read-only policy — confirming the prompt
+guardrail is doing its job. (That refusal is what's prompting
+SPEC-MCP-002, a follow-up spec to enable Notion writes with explicit
+boundaries.)
+
 2026-05-18 — Phase 0 implementation landed (pending VM verification).
 Status flipped ready → in-progress. Research confirmed the moving parts:
 
