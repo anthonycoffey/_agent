@@ -359,7 +359,7 @@
       "parameters": {
         "endpointUrl": "http://mcp-github:8082/readonly",
         "serverTransport": "httpStreamable",
-        "authentication": "none",
+        "authentication": "bearerAuth",
         "include": "all",
         "options": {}
       },
@@ -367,7 +367,13 @@
       "typeVersion": 1.2,
       "position": [-80, 540],
       "id": "bugsy-mcp-github-001",
-      "name": "MCP — GitHub"
+      "name": "MCP — GitHub",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "",
+          "name": "GitHub MCP - PAT"
+        }
+      }
     },
     {
       "parameters": {

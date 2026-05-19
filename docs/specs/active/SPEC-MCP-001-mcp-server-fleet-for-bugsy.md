@@ -44,9 +44,30 @@ GitHub MCP wired in. Notable differences from Phase 0:
 - Auth: GITHUB_PERSONAL_ACCESS_TOKEN env var on the container (not
   routed through n8n credentials; same simplification as Phase 0).
 
-Pending: VM-side verification — set GITHUB_TOKEN_MCP in .env, bring up
-mcp-github, import the updated bugsy.json, ask Bugsy a GitHub question
-(open PRs on coffey.codes, recent commits to periscope, etc).
+2026-05-18 — Phase 1.2 verified, with a fix landed in the same pass:
+
+  Verification: Bugsy answered 'What pull requests are open on
+  coffey.codes right now?' in Slack with live data from 3 repos
+  (valar-app, docs-meta), 4 PRs total, accurate PR numbers, titles,
+  status (all drafts), test counts, and follow-up offers — all
+  pulled through the GitHub MCP tool, not RAG-cached.
+
+  Fix: initial 'authentication: none' on the n8n MCP Client Tool node
+  returned 401 against /readonly. Unlike sooperset/mcp-atlassian
+  (single-tenant env-var auth), github-mcp-server's HTTP mode expects
+  per-request Bearer tokens — the container-side GITHUB_PERSONAL_
+  ACCESS_TOKEN is used by the server to call GitHub APIs, but the
+  MCP endpoint itself requires the *client* to authenticate too.
+
+  Flipped to authentication='bearerAuth' with an httpBearerAuth
+  credential ('GitHub MCP - PAT' in n8n's credential store, holding
+  the same PAT for simplicity). Re-import + activate, and the tool
+  worked end-to-end.
+
+  Observation worth keeping in mind for Phases 1.3 and 1.4: every
+  new MCP may have a different auth model — sooperset baked auth
+  into env vars; github-mcp-server expects per-request Bearer.
+  Check the server's HTTP mode docs first; assume nothing.
 
 2026-05-18 — Phase 0 implementation landed (pending VM verification).
 Status flipped ready → in-progress. Research confirmed the moving parts:
