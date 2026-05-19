@@ -277,3 +277,17 @@ services:
       # actually uses.
       TOOLSETS: "all"
     networks: [agent-net]
+
+  # Phase 1.2 — GitHub. Defense-in-depth read-only: PAT scoped read-only,
+  # server started with --read-only, and n8n points at the /readonly route
+  # (which applies a withReadonly middleware regardless of the flag).
+  # Streamable HTTP transport on port 8082; endpoint as
+  # http://mcp-github:8082/readonly from inside agent-net.
+  mcp-github:
+    image: ghcr.io/github/github-mcp-server:latest
+    container_name: agent-mcp-github
+    restart: unless-stopped
+    command: ["http", "--port", "8082", "--read-only"]
+    environment:
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_TOKEN_MCP}
+    networks: [agent-net]

@@ -29,8 +29,24 @@ RAG-cached digest content). Follow-up tweaks landed alongside:
   at /sse (not /), reachability tests must run from inside agent-net
   (host's localhost:9000 is unpublished by design)
 
-Phase 1.2 (GitHub MCP) now picked up — follows the same Pattern A
-shape as Phase 0.
+2026-05-18 — Phase 1.2 implementation landed (pending VM verification).
+GitHub MCP wired in. Notable differences from Phase 0:
+- Image: ghcr.io/github/github-mcp-server:latest, started with
+  `http --port 8082 --read-only`. Uses Streamable HTTP transport
+  (not SSE — different from sooperset/mcp-atlassian).
+- n8n MCP Client Tool node configured with serverTransport=httpStreamable
+  (the v1.2 default) instead of sse, pointed at
+  http://mcp-github:8082/readonly.
+- Defense-in-depth read-only: PAT scoped read-only (fine-grained, only
+  Contents/PRs/Issues/Metadata read) + server's --read-only flag +
+  /readonly mount path (chi router middleware enforces it regardless
+  of the flag). Three layers.
+- Auth: GITHUB_PERSONAL_ACCESS_TOKEN env var on the container (not
+  routed through n8n credentials; same simplification as Phase 0).
+
+Pending: VM-side verification — set GITHUB_TOKEN_MCP in .env, bring up
+mcp-github, import the updated bugsy.json, ask Bugsy a GitHub question
+(open PRs on coffey.codes, recent commits to periscope, etc).
 
 2026-05-18 — Phase 0 implementation landed (pending VM verification).
 Status flipped ready → in-progress. Research confirmed the moving parts:
