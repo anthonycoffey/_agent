@@ -1,13 +1,35 @@
 ---
 id: SPEC-MCP-003
 title: "Notion full read/write access for Bugsy (all surfaces enabled)"
-status: in-progress
+status: complete
 created: 2026-05-19
+completed: 2026-05-19
 author: Anthony Coffey
 reviewers: []
 affected_repos: [_agent]
 parent_spec: SPEC-MCP-002
 ---
+
+<!--
+2026-05-19 — Verified. Operator confirmed Bugsy is now performing
+Notion writes from Slack chat requests ("bugsy is editing shit in
+slack now"). The prompt-only edit (removing the "Still NOT enabled"
+section, keeping the SAFETY clause as the sole behavioral gate)
+landed cleanly; the Notion integration's fully-open capability set
+plus the broadened prompt means Bugsy can now exercise every Notion
+API surface the operator's integration supports.
+
+Three-step journey through the Notion writes scope (all archived):
+  - SPEC-MCP-002: page creation
+  - SPEC-MCP-003 (first cut): + update + archive + property updates
+  - SPEC-MCP-003 (broadened): + comments + schema mutations + delete
+    (all surfaces, operator yolo, prompt is the only guardrail)
+
+Spec moved to specs/archive/, status: complete. SPEC-MCP-001 Phase
+1.4 (GSC/GA4/Bing bundle MCP) is now the only open phase remaining
+on the MCP fleet rollout.
+-->
+
 
 <!--
 2026-05-19 — Triggered immediately after SPEC-MCP-002 shipped page

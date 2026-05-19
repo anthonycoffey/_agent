@@ -12,7 +12,6 @@
 - [Plans](specs/plans/)
 - [Active specs](specs/active/)
     - [SPEC-MCP-001 — MCP server fleet for Bugsy's brain and n8n workflows](specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md)
-    - [SPEC-MCP-003 — Notion full editing (update + archive + property updates)](specs/active/SPEC-MCP-003-notion-full-editing.md)
 - [Architecture Decision Records (ADRs)](specs/adrs/)
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
@@ -20,6 +19,7 @@
     - [BUG-DOCS-001 — Workflow reference generator creates duplicate stub docs on Windows](specs/archive/BUG-DOCS-001-workflow-reference-generator-creates-duplicate-stubs.md)
     - [SPEC-RAG-001 — Daily refresh of RAG source repos via cron + ingest](specs/archive/SPEC-RAG-001-daily-source-repo-refresh.md)
     - [SPEC-MCP-002 — Notion write surfaces for Bugsy (page creation)](specs/archive/SPEC-MCP-002-notion-write-surfaces.md)
+    - [SPEC-MCP-003 — Notion full read/write access for Bugsy (all surfaces enabled)](specs/archive/SPEC-MCP-003-notion-full-editing.md)
 
 ## Templates
 
