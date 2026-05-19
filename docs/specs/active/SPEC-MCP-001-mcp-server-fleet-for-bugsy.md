@@ -20,6 +20,18 @@ Locked-in scoping decisions (from the 2026-05-18 conversation):
 - No Cloudflare Tunnel exposure (agent-net only)
 - Langfuse + Caddy explicitly retired from the older plan
 
+2026-05-18 — Phase 0 verified end-to-end. Bugsy successfully answered
+a live Jira ticket query in Slack using the atlassian MCP tool (not
+RAG-cached digest content). Follow-up tweaks landed alongside:
+- TOOLSETS=all set explicitly on agent-mcp-atlassian to silence the
+  v0.22.0 deprecation warning seen in container logs
+- Smoke-test instructions in this spec corrected: the SSE endpoint is
+  at /sse (not /), reachability tests must run from inside agent-net
+  (host's localhost:9000 is unpublished by design)
+
+Phase 1.2 (GitHub MCP) now picked up — follows the same Pattern A
+shape as Phase 0.
+
 2026-05-18 — Phase 0 implementation landed (pending VM verification).
 Status flipped ready → in-progress. Research confirmed the moving parts:
 

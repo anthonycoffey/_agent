@@ -271,4 +271,9 @@ services:
       JIRA_USERNAME: ${ATLASSIAN_EMAIL}
       JIRA_API_TOKEN: ${ATLASSIAN_API_TOKEN}
       READ_ONLY_MODE: "true"
+      # Silence the v0.22.0 deprecation warning by setting TOOLSETS
+      # explicitly. "all" preserves current behavior; tighten to a smaller
+      # set (e.g. "jira") in a follow-up once we've seen what the agent
+      # actually uses.
+      TOOLSETS: "all"
     networks: [agent-net]
