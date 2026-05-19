@@ -12,6 +12,7 @@
 - [Plans](specs/plans/)
 - [Active specs](specs/active/)
     - [SPEC-MCP-001 — MCP server fleet for Bugsy's brain and n8n workflows](specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md)
+    - [SPEC-MCP-002 — Notion write surfaces for Bugsy (page creation)](specs/active/SPEC-MCP-002-notion-write-surfaces.md)
 - [Architecture Decision Records (ADRs)](specs/adrs/)
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
