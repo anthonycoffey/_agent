@@ -11,13 +11,13 @@
 
 - [Plans](specs/plans/)
 - [Active specs](specs/active/)
-    - [SPEC-RAG-001 — Daily refresh of RAG source repos via cron + ingest](specs/active/SPEC-RAG-001-daily-source-repo-refresh.md)
     - [SPEC-MCP-001 — MCP server fleet for Bugsy's brain and n8n workflows](specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md)
 - [Architecture Decision Records (ADRs)](specs/adrs/)
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
     - [BUG-AGENT-001 — Bugsy retrieves only one Jira digest when asked about archived history](specs/archive/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md)
     - [BUG-DOCS-001 — Workflow reference generator creates duplicate stub docs on Windows](specs/archive/BUG-DOCS-001-workflow-reference-generator-creates-duplicate-stubs.md)
+    - [SPEC-RAG-001 — Daily refresh of RAG source repos via cron + ingest](specs/archive/SPEC-RAG-001-daily-source-repo-refresh.md)
 
 ## Templates
 
