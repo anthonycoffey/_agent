@@ -75,6 +75,7 @@ nav:
       - Summary (TOC): SUMMARY.md
       - Development Standards: documentation/development-standards.md
       - Documentation Index: documentation/README.md
+      - "Agent Brief: Bugsy": documentation/agents/bugsy.md
   - Architecture:
       - architecture/overview.md
       - architecture/networking.md

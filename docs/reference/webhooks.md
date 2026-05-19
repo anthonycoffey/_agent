@@ -12,11 +12,22 @@ All webhooks are exposed via Cloudflare Tunnel at `https://n8n.coffey.codes/webh
 | `/slack-bugsy` | POST | `bugsy.json` (unified) | Slack Event API | DMs + @mentions. Handles URL-verification challenge. |
 | `/ask` | POST | `bugsy.json` (unified) | Slack slash command `/ask` (formerly `/bugsy`) | ACKs immediately, replies async via `response_url`. |
 | `/rag-query` | POST | `bugsy-rag-query.json` | Scripts, testing | JSON-API. No memory. See [RAG query](../workflows/rag-query.md). |
-| `/rag-ingest` | POST | `bugsy-rag-ingest.json` | `rag-ingest.sh` | Pushes a markdown doc into Qdrant. |
+| `/rag-ingest` | POST | `bugsy-rag-ingest.json` | `rag-ingest.sh`, `bugsy-jira-digest.json` (RAG mirror branch) | Pushes a markdown doc into Qdrant. The Jira digest workflow uses this to mirror each generated digest under category `jira-digests`. |
+| `/rag-refresh-notify` | POST | `bugsy-rag-refresh-notify.json` | `agent/scripts/rag-refresh.sh --notify` | Notification shim — the 4am cron job posts run summaries here; the workflow formats and Slacks them to `#mulberry-street`. |
 | `/job-board` | GET | `bugsy-job-board-ui.json` | Browser | HTML view of the job listings table. |
 | `/bugsy-research` | POST | `bugsy-research.json` | Slack slash command `/research <target>` | On-demand prospect brief. |
 
-Cron- and Gmail-triggered active workflows (`bugsy-job-board-fetcher`, `bugsy-leads-hunter`) have no inbound webhook — see each workflow's doc page for trigger details.
+Cron- and Gmail-triggered active workflows (`bugsy-job-board-fetcher`, `bugsy-leads-hunter`, `bugsy-jira-digest`) have no inbound webhook — see each workflow's doc page for trigger details.
+
+**Internal-only MCP endpoints** (not on the Cloudflare Tunnel; only reachable inside the `agent-net` Docker network):
+
+| Endpoint | Container | Notes |
+|---|---|---|
+| `http://mcp-atlassian:9000/sse` | `mcp-atlassian` | SSE transport. No client auth (single-tenant via env-var). |
+| `http://mcp-github:8082/readonly` | `mcp-github` | Streamable HTTP. Per-request Bearer auth required. |
+| `http://mcp-notion:3000/mcp` | `mcp-notion` | Streamable HTTP. Per-request Bearer auth required. |
+
+n8n's MCP Client Tool nodes connect to these internally. See [SPEC-MCP-001](../specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md) for the fleet design.
 
 
 ## Payload examples

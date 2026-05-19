@@ -34,6 +34,9 @@ Cloud-init bootstraps the VM on first boot only. Any changes after that are depl
 | `agent-n8n` | n8nio/n8n | Workflow automation, webhooks, AI Agent runtime |
 | `agent-cloudflared` | cloudflare/cloudflared | Public ingress (Cloudflare Tunnel) |
 | `agent-searxng` | searxng/searxng | Self-hosted metasearch for research workflows |
+| `agent-mcp-atlassian` | ghcr.io/sooperset/mcp-atlassian | Live Jira read tool for Bugsy's AI Agent. SSE on :9000 (internal). |
+| `agent-mcp-github` | ghcr.io/github/github-mcp-server | Live GitHub read tool (PRs, issues, code search). Streamable HTTP on :8082 (internal). |
+| `agent-mcp-notion` | mcp/notion | Live Notion read/write tool — pages, blocks, databases, kanban properties, archives, comments, schema. Streamable HTTP on :3000 (internal). |
 
 ## Models available (via LiteLLM at `http://litellm:4000/v1`)
 
@@ -61,6 +64,15 @@ flowchart LR
   LiteLLM --> OpenAI
   LiteLLM --> Google
   LiteLLM --> Ollama
+
+  N8N -.live tools.-> MCP_ATL[mcp-atlassian]
+  N8N -.live tools.-> MCP_GH[mcp-github]
+  N8N -.live tools.-> MCP_NTN[mcp-notion]
+  MCP_ATL --> Jira[(Jira API)]
+  MCP_GH --> GitHub[(GitHub API)]
+  MCP_NTN --> Notion[(Notion API)]
 ```
 
 Cloudflare Tunnel is the only path in. n8n is the orchestration layer. Postgres holds chat memory and app data. Qdrant holds personal-knowledge embeddings. Ollama runs `nomic-embed-text` for local embeddings. LiteLLM brokers all chat-model calls so the workflow JSON only ever points at one URL.
+
+The three MCP containers (`mcp-atlassian`, `mcp-github`, `mcp-notion`) give the AI Agent inside `bugsy.json` **live tools** for Jira, GitHub, and Notion. They sit on the same `agent-net` network — no Cloudflare exposure. Bugsy uses them to answer questions that need current state (e.g. "what's UTT-299's status?", "what PRs are open on coffey.codes?", "what's on the kanban this week?") instead of relying on the RAG-cached snapshots which go stale within hours. See [SPEC-MCP-001](../specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md) for the fleet design and per-MCP details.

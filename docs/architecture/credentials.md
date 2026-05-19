@@ -24,12 +24,29 @@ The bearer token for LiteLLM is stored as a `Header Auth` credential named `Lite
 
 | Name | Type | Used by |
 |---|---|---|
-| `Slack - Bugsy` | Slack API | `bugsy.json`, `bugsy-inbox-watcher`, `bugsy-job-board-fetcher`, `bugsy-leads-hunter`, `bugsy-research` |
-| `LiteLLM - local proxy` | OpenAI API | LangChain `openAi` nodes — `bugsy.json`, `bugsy-inbox-watcher`, `bugsy-leads-hunter`, `bugsy-research` |
+| `Slack - Bugsy` | Slack API | `bugsy.json`, `bugsy-inbox-watcher`, `bugsy-jira-digest`, `bugsy-job-board-fetcher`, `bugsy-leads-hunter`, `bugsy-rag-refresh-notify`, `bugsy-research` |
+| `LiteLLM - local proxy` | OpenAI API | LangChain `openAi` nodes — `bugsy.json`, `bugsy-inbox-watcher`, `bugsy-jira-digest`, `bugsy-leads-hunter`, `bugsy-research` |
 | `LiteLLM Bearer` | Header Auth | Raw HTTP calls to LiteLLM — `bugsy-job-board-fetcher`, `bugsy-rag-query` |
 | `Postgres — agent DB` | Postgres | App data — `bugsy-job-board-fetcher`, `bugsy-job-board-ui`, `bugsy-leads-hunter` |
 | `Postgres - Memory database` | Postgres | LangChain Postgres Chat Memory — `bugsy.json` |
 | `Gmail - Bugsy (anthony@coffey.codes)` | Gmail OAuth2 | `bugsy-inbox-watcher`, `bugsy-research` |
+| `Gmail - Bugsy (anthony@bitmotive.com)` | Gmail OAuth2 | `bugsy-jira-digest` (work-email Jira notifications) |
+| `GitHub MCP - PAT` | HTTP Bearer Auth | MCP Client Tool node in `bugsy.json` pointed at `http://mcp-github:8082/readonly`. Holds the same fine-grained PAT as `GITHUB_TOKEN_MCP` in `.env`. |
+| `Notion MCP - Bearer` | HTTP Bearer Auth | MCP Client Tool node in `bugsy.json` pointed at `http://mcp-notion:3000/mcp`. Holds the random hex token also stored as `NOTION_MCP_BEARER_TOKEN` in `.env`. |
+
+Credential IDs are referenced inside the workflow JSON files. If you re-create a credential, you must also update the JSON to point at the new ID (or re-pick it from each node's credential dropdown in the n8n UI).
+
+The same `LiteLLM - local proxy` credential is reused everywhere a LangChain `openAi` node is used. The bearer-auth variant (`LiteLLM Bearer`) exists for raw `HTTP Request` nodes that hit `http://litellm:4000/v1/chat/completions` directly — they can't use the OpenAI-API credential type. Both wrap the same underlying `WEBUI_SECRET_KEY` value from `agent/.env`.
+
+## MCP credentials — the dual-token pattern
+
+Each MCP server has its own auth model; this is worth understanding because it isn't uniform:
+
+- **Atlassian MCP** — env-var only. The container has `ATLASSIAN_API_TOKEN` and authenticates outbound to Jira; the MCP endpoint itself accepts unauthenticated requests from inside `agent-net`. The n8n MCP Client Tool node connects with `authentication: 'none'`. No n8n credential involved.
+- **GitHub MCP** — dual-token. `GITHUB_TOKEN_MCP` (env) authorizes server → GitHub API. A **separate** per-request Bearer at the MCP endpoint authorizes n8n → MCP server; that's stored in the `GitHub MCP - PAT` n8n credential. For simplicity, you can use the same PAT value for both.
+- **Notion MCP** — also dual-token. `NOTION_INTEGRATION_TOKEN` (env) authorizes server → Notion API. A separate `AUTH_TOKEN` env (= `NOTION_MCP_BEARER_TOKEN`) authorizes n8n → MCP endpoint; that value is also held in the `Notion MCP - Bearer` n8n credential.
+
+Don't try to unify the Atlassian pattern with the others — `sooperset/mcp-atlassian` is single-tenant by design; `github-mcp-server` and `notionhq/notion-mcp-server` are multi-tenant and gate their HTTP endpoints with Bearer auth.
 
 Credential IDs are referenced inside the workflow JSON files. If you re-create a credential, you must also update the JSON to point at the new ID (or re-pick it from each node's credential dropdown in the n8n UI).
 

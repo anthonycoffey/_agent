@@ -33,6 +33,7 @@
 - [Documentation index](documentation/README.md)
 - [Development standards (DDD + TDD + git conventions)](documentation/development-standards.md)
 - [Agent briefs](documentation/agents/)
+    - [Bugsy](documentation/agents/bugsy.md)
 - [Guides](documentation/guides/)
 - [Deep dives](documentation/deep-dives/)
 - [Repo / service references](documentation/repos/)
