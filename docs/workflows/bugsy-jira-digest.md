@@ -125,7 +125,7 @@ The cutoff is hardcoded to 9h. If the cron schedule changes, the cutoff in `Aggr
 
 ## Node reference: Bugsy — Jira Digest (work email)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-19. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 7 · **Execution order:** `v1`
 

@@ -60,7 +60,7 @@ If the workflow is active but the Slack node fails (channel doesn't exist, crede
 
 ## Node reference: Bugsy — RAG Refresh Notify
 
-> Auto-generated from `agent/n8n/workflows/bugsy-rag-refresh-notify.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-rag-refresh-notify.json` on 2026-05-19. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 3 · **Execution order:** `v1`
 

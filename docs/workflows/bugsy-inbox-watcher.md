@@ -28,7 +28,7 @@ Bugsy can't safely auto-send email — too many edge cases, too much reputationa
 
 ## Node reference: Bugsy — Inbox Watcher (gmail)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-inbox-watcher.json` on 2026-05-18. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-inbox-watcher.json` on 2026-05-19. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `true` · **Nodes:** 10 · **Execution order:** `v1`
 
