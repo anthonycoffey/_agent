@@ -10,8 +10,10 @@
 ## Specs
 
 - [Plans](specs/plans/)
+    - [2026-05-19 — Post-MCP roadmap](specs/plans/2026-05-19-post-mcp-roadmap.md)
 - [Active specs](specs/active/)
-    - [SPEC-MCP-001 — MCP server fleet for Bugsy's brain and n8n workflows](specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md)
+    - [SPEC-WORKFLOW-001 — Secretary email digest](specs/active/SPEC-WORKFLOW-001-secretary-email-digest.md)
+    - [SPEC-LEADS-001 — Leads hunter rework](specs/active/SPEC-LEADS-001-leads-hunter-rework.md)
 - [Architecture Decision Records (ADRs)](specs/adrs/)
 - [Archive](specs/archive/)
     - [BUG-JIRA-001 — Jira digest reports completed tickets as current activity](specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md)
@@ -20,6 +22,7 @@
     - [SPEC-RAG-001 — Daily refresh of RAG source repos via cron + ingest](specs/archive/SPEC-RAG-001-daily-source-repo-refresh.md)
     - [SPEC-MCP-002 — Notion write surfaces for Bugsy (page creation)](specs/archive/SPEC-MCP-002-notion-write-surfaces.md)
     - [SPEC-MCP-003 — Notion full read/write access for Bugsy (all surfaces enabled)](specs/archive/SPEC-MCP-003-notion-full-editing.md)
+    - [SPEC-MCP-001 — MCP server fleet for Bugsy's brain (Phase 1.4 cancelled)](specs/archive/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md)
 
 ## Templates
 

@@ -1,12 +1,34 @@
 ---
 id: SPEC-MCP-001
 title: "MCP server fleet for Bugsy's brain and n8n workflows"
-status: in-progress
+status: complete
 created: 2026-05-18
+completed: 2026-05-19
 author: Anthony Coffey
 reviewers: []
 affected_repos: [_agent]
 ---
+
+<!--
+2026-05-19 — SPEC-MCP-001 closed. Final state of P1 lineup:
+  - Phase 0     ✅ Atlassian (Jira) — shipped & verified
+  - Phase 1.2   ✅ GitHub             — shipped & verified
+  - Phase 1.3   ✅ Notion              — shipped & verified
+                  + SPEC-MCP-002 (page creation) shipped + archived
+                  + SPEC-MCP-003 (full read/write/edit/archive/comment/schema) shipped + archived
+  - Phase 1.4   ❌ GSC / GA4 / Bing bundle — CANCELLED
+
+  Phase 1.4 was cancelled per operator decision on 2026-05-19. Reasoning:
+  the existing GSC-bundle MCP runs locally for Claude Code use; replicating
+  it as a container for Bugsy was deemed lower priority than other workflow
+  improvements identified during the post-MCP audit (see plan
+  docs/specs/plans/2026-05-19-post-mcp-roadmap.md). If the need re-emerges
+  (e.g. Bugsy needs to answer SEO-metric questions at chat time), spin up
+  SPEC-MCP-004 for the GSC bundle then.
+
+  Three of four P1 MCPs is enough to declare the fleet feature-complete
+  for current needs. Moving to specs/archive/.
+-->
 
 <!--
 2026-05-18 — Plan approved. Status flipped draft → ready.
