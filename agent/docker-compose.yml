@@ -264,6 +264,7 @@ services:
   aider:
     image: paulgauthier/aider:latest
     container_name: agent-aider
+    user: root
     restart: unless-stopped
     entrypoint: ["/bin/sh", "/agent/entrypoint.sh"]
     environment:
