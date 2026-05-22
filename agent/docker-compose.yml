@@ -19,6 +19,7 @@ volumes:
   n8n-data:
   searxng-data:
   evolution-data:
+  aider-workspace:
 
 services:
   # ---------- Data layer ----------
@@ -250,6 +251,41 @@ services:
         bind:
           create_host_path: false
     networks: [agent-net]
+
+  # ---------- Coding agent layer ----------
+  #
+  # Aider — AI coding agent runner. Stays running so n8n can trigger it via
+  # SSH + `docker exec -d agent-aider /agent/run-agent.sh ...` without a
+  # cold-start penalty. Repos must be cloned manually into /workspace before
+  # first use (see agent/aider/entrypoint.sh for the clone command).
+  # Routes LLM calls through LiteLLM so it uses the same models as the rest
+  # of the stack. See docs/workflows/github-agent-pipeline.md.
+
+  aider:
+    image: paulgauthier/aider:latest
+    container_name: agent-aider
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/agent/entrypoint.sh"]
+    environment:
+      OPENAI_API_BASE: http://litellm:4000/v1
+      OPENAI_API_KEY: ${WEBUI_SECRET_KEY}
+      GITHUB_TOKEN_AIDER: ${GITHUB_TOKEN_AIDER}
+    volumes:
+      - aider-workspace:/workspace
+      - type: bind
+        source: ./aider/entrypoint.sh
+        target: /agent/entrypoint.sh
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./aider/run-agent.sh
+        target: /agent/run-agent.sh
+        read_only: true
+        bind:
+          create_host_path: false
+    networks: [agent-net]
+    depends_on: [litellm]
 
   # ---------- MCP layer ----------
   #
