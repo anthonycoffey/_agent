@@ -72,6 +72,7 @@ copy of each workflow in postgres — file changes don't auto-apply).
 | `gpt-4o-mini` | OpenAI |
 | `gemini-2.5-pro` | Google |
 | `gemini-2.5-flash` | Google |
+| `gemini-3.1-flash-lite` | Google |
 | `qwen3` | Ollama local (qwen3:8b) |
 | `nomic-embed-text` | Ollama local (embeddings) |
 
