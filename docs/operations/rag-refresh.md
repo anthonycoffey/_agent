@@ -7,11 +7,11 @@ tags: [bugsy, rag, cron, ops]
 
 Bugsy's RAG index includes content from external git repos symlinked under `~/agent/rag/projects/` (e.g. `coffey.codes`, `periscope`). Without automation, those repos go stale and Bugsy quotes outdated info. This procedure refreshes them every morning.
 
-For the architectural reasoning, see [SPEC-RAG-001](../specs/active/SPEC-RAG-001-daily-source-repo-refresh.md) (once archived: `specs/archive/`).
+For the architectural reasoning, see [SPEC-RAG-001](../specs/archive/SPEC-RAG-001-daily-source-repo-refresh.md) (archived).
 
 ## What the script does
 
-[`agent/scripts/rag-refresh.sh`](../../agent/scripts/rag-refresh.sh) runs on the host VM:
+[`agent/scripts/rag-refresh.sh`](https://github.com/anthonycoffey/_agent/blob/main/agent/scripts/rag-refresh.sh) runs on the host VM:
 
 1. Walks every symlink under `~/agent/rag/projects/`
 2. For each: resolves to a git repo root via `git rev-parse --show-toplevel`
@@ -20,7 +20,7 @@ For the architectural reasoning, see [SPEC-RAG-001](../specs/active/SPEC-RAG-001
 5. Runs `bash ~/agent/rag-ingest.sh projects` to re-embed everything
 6. With `--notify`, POSTs a one-line JSON summary to `https://n8n.coffey.codes/webhook/rag-refresh-notify`, which formats and posts to `#mulberry-street`
 
-Self-discovering — no hardcoded repo list. Any new repo you add via the [clone + symlink pattern](../../CLAUDE.md) is picked up automatically on the next run.
+Self-discovering — no hardcoded repo list. Any new repo you add via the [clone + symlink pattern](https://github.com/anthonycoffey/_agent/blob/main/CLAUDE.md) is picked up automatically on the next run.
 
 ## Logs
 
@@ -81,7 +81,7 @@ In Slack `#mulberry-street`:
 
 ## Importing the notification workflow
 
-[`agent/n8n/workflows/bugsy-rag-refresh-notify.json`](../../agent/n8n/workflows/bugsy-rag-refresh-notify.json) holds the n8n side. Three nodes: webhook → format → Slack post. Per the [file-based import flow](../../CLAUDE.md):
+[`agent/n8n/workflows/bugsy-rag-refresh-notify.json`](https://github.com/anthonycoffey/_agent/blob/main/agent/n8n/workflows/bugsy-rag-refresh-notify.json) holds the n8n side. Three nodes: webhook → format → Slack post. Per the [file-based import flow](https://github.com/anthonycoffey/_agent/blob/main/CLAUDE.md):
 
 1. n8n UI → ⋮ → **Import from File** → pick the local JSON
 2. Save → **Activate**
@@ -99,6 +99,6 @@ In Slack `#mulberry-street`:
 
 ## What it doesn't do
 
-- Doesn't clone new repos. First-time additions still follow the [clone + symlink pattern](../../CLAUDE.md). Once the symlink is in place, the daily job picks it up automatically.
+- Doesn't clone new repos. First-time additions still follow the [clone + symlink pattern](https://github.com/anthonycoffey/_agent/blob/main/CLAUDE.md). Once the symlink is in place, the daily job picks it up automatically.
 - Doesn't refresh the `bio`, `articles`, or `case-studies` categories — those are hand-curated and have no git remote. Refresh them with `bash ~/agent/rag-ingest.sh <category>` when you change a file.
 - Doesn't manage `.git` credentials. Repos must already authenticate cleanly (HTTPS-with-cached-creds or SSH key) from the agent user on the VM.

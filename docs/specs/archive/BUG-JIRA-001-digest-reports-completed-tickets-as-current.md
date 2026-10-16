@@ -61,7 +61,7 @@ The digest should describe only state changes that happened **within the current
 
 ## Root cause (hypothesized — needs verification with a bad-digest sample)
 
-Three contributing factors, all visible in [`agent/n8n/workflows/bugsy-jira-digest.json`](../../../agent/n8n/workflows/bugsy-jira-digest.json):
+Three contributing factors, all visible in [`agent/n8n/workflows/bugsy-jira-digest.json`](https://github.com/anthonycoffey/_agent/blob/main/agent/n8n/workflows/bugsy-jira-digest.json):
 
 ### 1. The LLM receives no per-email timestamps
 

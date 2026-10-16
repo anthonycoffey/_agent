@@ -15,7 +15,7 @@ last_reviewed: 2026-05-19
 
 ## What this is
 
-Bugsy is Anthony Coffey's personal AI agent. He lives in Slack — DMs, @mentions, and the `/ask` slash command all reach the same agent — and runs on a single GCP Compute Engine VM via Docker Compose. His "brain" is a single n8n workflow ([`bugsy.json`](../../../agent/n8n/workflows/bugsy.json)) that wires together:
+Bugsy is Anthony Coffey's personal AI agent. He lives in Slack — DMs, @mentions, and the `/ask` slash command all reach the same agent — and runs on a single GCP Compute Engine VM via Docker Compose. His "brain" is a single n8n workflow ([`bugsy.json`](https://github.com/anthonycoffey/_agent/blob/main/agent/n8n/workflows/bugsy.json)) that wires together:
 
 - A LangChain **AI Agent** node running claude-sonnet-4-6 via LiteLLM.
 - **Postgres Chat Memory** for short-term conversation context (10-message window per session).
@@ -73,7 +73,7 @@ Bugsy doesn't run on a laptop — he's deployed on the `agent-vm` GCP instance, 
 
 | State | Where | Lifetime |
 |---|---|---|
-| Short-term conversation memory | Postgres `n8n_chat_histories` table, keyed by `sessionKey` (per Slack surface) | 10-message context window; rolling |
+| Short-term conversation memory | Postgres `n8n_chat_histories` table, keyed by `sessionKey` (per Slack surface). Stores the raw question only — retrieved RAG context is injected via `systemMessage` and deliberately never persisted (BUG-AGENT-002) | 10-message context window; rolling |
 | Long-term RAG corpus | Qdrant `personal_knowledge` collection | Persistent. Categories: `bio`, `articles`, `case-studies`, `projects`, `jira-digests` |
 | Workflow JSON | n8n's own postgres DB (encrypted via `N8N_ENCRYPTION_KEY`) | Persistent. Mirror in git for source control. |
 | Credentials | n8n credential store (postgres, encrypted) | Persistent |
@@ -89,6 +89,7 @@ Bugsy doesn't run on a laptop — he's deployed on the `agent-vm` GCP instance, 
 | Bugsy edits the wrong page in Notion | LLM mistake. Notion version history is the undo path (everything attributed to "Bugsy MCP integration") | Notion → version history → restore |
 | Bugsy quotes stale Jira info despite digest being recent | RAG-only path; tool not invoked. Check that the system prompt mentions "use the atlassian tool when asked about current state" | The AI Agent's systemMessage; see [BUG-JIRA-001](../../specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md) for the staleness pattern |
 | MCP Client Tool slot not visible on AI Agent node | n8n missing `N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true` env var | `docker exec agent-n8n env | grep COMMUNITY`; fix in `docker-compose.yml` |
+| Multi-step task stops partway through (e.g. creates a Notion page but never sets its status) | Iteration cap. Either `maxIterations` regressed below 30, or the RAG blob is back in `chatInput` and stale context is eating the budget | `SELECT message FROM n8n_chat_histories ORDER BY id DESC LIMIT 5` — human turns should be as short as what the boss typed. See [BUG-AGENT-002](../../specs/archive/BUG-AGENT-002-agent-hits-iteration-cap-on-multi-step-notion-tasks.md) |
 
 ## Gotchas
 
@@ -97,6 +98,7 @@ Bugsy doesn't run on a laptop — he's deployed on the `agent-vm` GCP instance, 
 - **Two-stage retrieval is in place** so Jira-digest content always gets a fair shot at the top-N. Without it, Bugsy could only surface one Jira digest at a time (the bug captured in [BUG-AGENT-001](../../specs/archive/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md)).
 - **n8n's `Import from File` reads from the browser's machine**, not the VM. Updating the JSON in git and `git pull`-ing on the VM does NOT update n8n's runtime view — only file-import does. n8n stores its own copy in its postgres DB.
 - **Postgres chat memory is per-surface.** Session keys: `slack:dm:{user_id}`, `slack:thread:{channel}:{ts}`, `slack:slash:{user_id}`. A DM thread and a channel mention have separate memories; that's intentional so contexts don't bleed.
+- **Never put retrieved context in `chatInput`.** Chat memory persists that field verbatim, so RAG chunks parked there get replayed as part of every later turn and starve the iteration budget. Retrieved context belongs in the `systemMessage` expression, which is not persisted. This reverses an earlier design decision — the old reasoning (that `systemMessage` expressions evaluate unreliably) no longer holds on AI Agent `typeVersion: 3.1`. See [BUG-AGENT-002](../../specs/archive/BUG-AGENT-002-agent-hits-iteration-cap-on-multi-step-notion-tasks.md).
 - **`process.env` and `$env` are both blocked inside n8n Code nodes** — task runner sandbox. Use credentials on native nodes for secrets.
 - **`docker compose restart` doesn't fix bind-mount path changes** — use `docker compose rm -sf <svc> && up -d` to force container recreation.
 
@@ -109,11 +111,12 @@ Bugsy doesn't run on a laptop — he's deployed on the `agent-vm` GCP instance, 
 
 ## See also
 
-- [SPEC-MCP-001](../../specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md) — the MCP fleet design (active; Phase 1.4 GSC bundle still open)
+- [SPEC-MCP-001](../../specs/archive/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md) — the MCP fleet design (archived 2026-05-19; Phase 1.4 GSC/GA4/Bing bundle cancelled)
 - [SPEC-MCP-002 archived](../../specs/archive/SPEC-MCP-002-notion-write-surfaces.md) — Notion page creation
 - [SPEC-MCP-003 archived](../../specs/archive/SPEC-MCP-003-notion-full-editing.md) — Notion full read/write
 - [BUG-JIRA-001 archived](../../specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md) — FRESH/STALE tagging
 - [BUG-AGENT-001 archived](../../specs/archive/BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md) — two-stage retrieval
+- [BUG-AGENT-002 archived](../../specs/archive/BUG-AGENT-002-agent-hits-iteration-cap-on-multi-step-notion-tasks.md) — RAG out of `chatInput`, `maxIterations` 30
 - [SPEC-RAG-001 archived](../../specs/archive/SPEC-RAG-001-daily-source-repo-refresh.md) — daily refresh cron
 - [Bugsy (unified) workflow doc](../../workflows/bugsy-unified.md) — node-level reference
 - `CLAUDE.md` (repo root) — project context, deploy procedures, gotchas

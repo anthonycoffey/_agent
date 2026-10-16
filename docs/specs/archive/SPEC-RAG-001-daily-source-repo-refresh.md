@@ -48,7 +48,7 @@ Status flipped draft → in-progress. Implementation landed in:
 
 ## Problem
 
-External-repo content (e.g. [`coffey.codes`](../../../agent/rag/projects/coffey-codes), and now also `@anthonycoffey/periscope` per chat thread 2026-05-18) is added to Bugsy's knowledge base via the clone + symlink pattern: clone to `~/<repo>/`, symlink `~/<repo>/docs` under `~/agent/rag/projects/<repo>`, run `bash ~/agent/rag-ingest.sh projects`. See [`project_rag_source_repos.md`](memory).
+External-repo content (e.g. [`coffey.codes`](https://github.com/anthonycoffey/_agent/blob/main/agent/rag/projects/coffey-codes.md), and now also `@anthonycoffey/periscope` per chat thread 2026-05-18) is added to Bugsy's knowledge base via the clone + symlink pattern: clone to `~/<repo>/`, symlink `~/<repo>/docs` under `~/agent/rag/projects/<repo>`, run `bash ~/agent/rag-ingest.sh projects`. Tracked in Claude Code memory as `project_rag_source_repos`.
 
 Today, refreshes are manual. Whenever a source repo changes (new SEO scripts in `periscope`, new case studies in `coffey.codes`, etc.), Bugsy keeps serving stale information until somebody SSHes in and runs `git pull && bash ~/agent/rag-ingest.sh projects`. Concrete failure mode hit 2026-05-18: Bugsy described `periscope` Phases B+C as "out of scope for now / future SPEC-024 and SPEC-025" when Anthony has already shipped them — because the source repo's updated docs were never re-ingested.
 

@@ -69,7 +69,7 @@ When a workflow is already claimed by an existing doc via `n8n_workflows: [...]`
 
 ## Root cause
 
-In [`agent/n8n/scripts/generate-workflow-reference.mjs`](../../../agent/n8n/scripts/generate-workflow-reference.mjs), `readFrontmatter()` uses regexes that require literal `\n`:
+In [`agent/n8n/scripts/generate-workflow-reference.mjs`](https://github.com/anthonycoffey/_agent/blob/main/agent/n8n/scripts/generate-workflow-reference.mjs), `readFrontmatter()` uses regexes that require literal `\n`:
 
 ```js
 function readFrontmatter(content) {
@@ -152,4 +152,4 @@ This bug class would have been caught by a simple unit test on `readFrontmatter(
 ## Notes
 
 - The hand-written docs that lost their claim status (`bugsy-unified.md`, `rag-ingest.md`, `rag-query.md`, `job-board.md`) were never *actually* corrupted by the bug — their frontmatter is intact, just unreadable to the buggy regex. The fix restores correct interpretation on Windows without touching the doc files at all.
-- This is the second n8n / Node.js parser quirk hit in 24 hours; the previous was the `}}` greedy match in n8n's HTTP-body template parser (see [BUG-AGENT-001](BUG-AGENT-001-...) — archived). Pattern: when a script seems to work on one machine but produces ghost files on another, suspect line endings or template-parser greedy matches first.
+- This is the second n8n / Node.js parser quirk hit in 24 hours; the previous was the `}}` greedy match in n8n's HTTP-body template parser (see [BUG-AGENT-001](BUG-AGENT-001-bugsy-retrieves-only-one-jira-digest.md) — archived). Pattern: when a script seems to work on one machine but produces ghost files on another, suspect line endings or template-parser greedy matches first.

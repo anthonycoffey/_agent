@@ -33,7 +33,7 @@ Pick by intent, not by file size:
 - Are you describing a whole service / repo for someone who needs the full picture? → `repos/` (or `../architecture/`)
 - Are you writing a brief for an AI agent to onboard onto a service? → `agents/`
 
-If it doesn't fit any of these, it's probably a spec or an ADR, not documentation. See [`../README.md`](../README.md).
+If it doesn't fit any of these, it's probably a spec or an ADR, not documentation. See [`../README.md`](https://github.com/anthonycoffey/_agent/blob/main/README.md).
 
 ## Standards
 

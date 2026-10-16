@@ -28,8 +28,11 @@
    docker exec -it agent-ollama ollama list
    sudo cp ~/bugsy/agent/motd /etc/motd
 
- Next up: MCP server fleet for Bugsy's brain — see SPEC-MCP-001.
-   (Langfuse + Caddy retired from the plan; Open WebUI + n8n shipped.)
+ Next up: secretary email digest (SPEC-WORKFLOW-001) + leads-hunter rework
+   (SPEC-LEADS-001). Both drafted, neither started.
+   Half-built: the agent-aider coding agent — no n8n workflow drives it yet.
+   Resuming after a pause? Read docs/specs/plans/2026-10-16-session-pickup.md.
+   (MCP fleet shipped: atlassian + github + notion. Langfuse + Caddy retired.)
 
  You are on the Tailnet as:  agent-vm
  Backups go to:              gs://<project>-agent-backups-01

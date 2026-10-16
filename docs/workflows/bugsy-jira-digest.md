@@ -61,7 +61,7 @@ Each digest is mirrored into Qdrant via the same `/rag-ingest` webhook the bulk 
 }
 ```
 
-- **Filename** uses `$now.toISO()` captured at execution start. Each cron fire (8am + 4pm CT) produces its own document; a retry of the *same* execution overwrites in-place (Qdrant point IDs are deterministic UUIDs seeded by `filename + chunk_index`, see [bugsy-rag-ingest.md](bugsy-rag-ingest.md)). Distinct fires never collide.
+- **Filename** uses `$now.toISO()` captured at execution start. Each cron fire (8am + 4pm CT) produces its own document; a retry of the *same* execution overwrites in-place (Qdrant point IDs are deterministic UUIDs seeded by `filename + chunk_index`, see [rag-ingest.md](rag-ingest.md)). Distinct fires never collide.
 - **Tags** are static. We rely on Qdrant's payload filtering (`category = "jira-digests"`) to scope retrieval, not per-ticket tags — Bugsy's RAG retriever already pulls by semantic similarity, and the digest body itself carries the linkified ticket IDs the embedder will index.
 - **Frontmatter title** carries the run timestamp so a recall like "what did the Jira digest say this morning?" surfaces the right doc.
 
@@ -81,7 +81,7 @@ Slack mrkdwn link syntax is `<URL|display>`. When display text is supplied (not 
 
 ## Temporal accuracy guardrail
 
-The Gmail filter pulls a 24h window (`newer_than:1d`), so on a typical 8h cron cadence each digest sees the previous 24h of mail — roughly 16h of overlap with the prior digest. Without intervention, the LLM treats every email it sees as "recent activity," which is how closed tickets re-surface in subsequent digests as if they were still in-flight (the closure email survives multiple 24h windows; the closure note recurs in quoted activity tails of later notifications). See [BUG-JIRA-001](../specs/active/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md).
+The Gmail filter pulls a 24h window (`newer_than:1d`), so on a typical 8h cron cadence each digest sees the previous 24h of mail — roughly 16h of overlap with the prior digest. Without intervention, the LLM treats every email it sees as "recent activity," which is how closed tickets re-surface in subsequent digests as if they were still in-flight (the closure email survives multiple 24h windows; the closure note recurs in quoted activity tails of later notifications). See [BUG-JIRA-001](../specs/archive/BUG-JIRA-001-digest-reports-completed-tickets-as-current.md).
 
 Two-part fix wired into the pipeline:
 
@@ -125,7 +125,7 @@ The cutoff is hardcoded to 9h. If the cron schedule changes, the cutoff in `Aggr
 
 ## Node reference: Bugsy — Jira Digest (work email)
 
-> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-05-19. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-jira-digest.json` on 2026-10-16. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 7 · **Execution order:** `v1`
 

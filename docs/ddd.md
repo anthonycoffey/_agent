@@ -85,7 +85,7 @@ When asking Claude to file a new bug:
 
 ## What lives elsewhere (and why)
 
-- [`../CLAUDE.md`](../CLAUDE.md) — project context for Claude Code. Per DDD non-goals, root files like CLAUDE.md and the repo's top-level README are intentionally not moved under `docs/`.
-- [`../logs/decisions-log.md`](../logs/decisions-log.md) — informal one-liner decision log. ADRs in `specs/adrs/` are the formal mechanism going forward; this older log is preserved for history.
-- [`../logs/incident-log.md`](../logs/incident-log.md) — chronological incident record.
-- [`../logs/plans/`](../logs/plans/) — pre-DDD working plans; new plans should live under `specs/plans/`.
+- [`../CLAUDE.md`](https://github.com/anthonycoffey/_agent/blob/main/CLAUDE.md) — project context for Claude Code. Per DDD non-goals, root files like CLAUDE.md and the repo's top-level README are intentionally not moved under `docs/`.
+- [`../logs/decisions-log.md`](https://github.com/anthonycoffey/_agent/blob/main/logs/decisions-log.md) — informal one-liner decision log. ADRs in `specs/adrs/` are the formal mechanism going forward; this older log is preserved for history.
+- [`../logs/incident-log.md`](https://github.com/anthonycoffey/_agent/blob/main/logs/incident-log.md) — chronological incident record.
+- [`../logs/plans/`](https://github.com/anthonycoffey/_agent/tree/main/logs/plans) — pre-DDD working plans; new plans should live under `specs/plans/`.

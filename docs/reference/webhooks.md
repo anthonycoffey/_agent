@@ -27,7 +27,7 @@ Cron- and Gmail-triggered active workflows (`bugsy-job-board-fetcher`, `bugsy-le
 | `http://mcp-github:8082/readonly` | `mcp-github` | Streamable HTTP. Per-request Bearer auth required. |
 | `http://mcp-notion:3000/mcp` | `mcp-notion` | Streamable HTTP. Per-request Bearer auth required. |
 
-n8n's MCP Client Tool nodes connect to these internally. See [SPEC-MCP-001](../specs/active/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md) for the fleet design.
+n8n's MCP Client Tool nodes connect to these internally. See [SPEC-MCP-001](../specs/archive/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md) for the fleet design.
 
 
 ## Payload examples

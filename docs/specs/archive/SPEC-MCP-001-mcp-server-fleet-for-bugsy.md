@@ -188,7 +188,7 @@ Files touched:
 
 ## Problem
 
-Bugsy's AI Agent (`@n8n/n8n-nodes-langchain.agent` inside [`bugsy.json`](../../../agent/n8n/workflows/bugsy.json)) is currently **knowledge-only** — at the moment it answers a question, the only context it has is whatever the upstream RAG pipeline pre-retrieved. It cannot:
+Bugsy's AI Agent (`@n8n/n8n-nodes-langchain.agent` inside [`bugsy.json`](https://github.com/anthonycoffey/_agent/blob/main/agent/n8n/workflows/bugsy.json)) is currently **knowledge-only** — at the moment it answers a question, the only context it has is whatever the upstream RAG pipeline pre-retrieved. It cannot:
 
 - Look up a Jira ticket's *current* status (the RAG mirror surfaces yesterday's digest; live state is invisible)
 - Read a GitHub PR or issue

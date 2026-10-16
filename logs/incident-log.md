@@ -300,7 +300,7 @@ directory. Docker tried to bind-mount a *file* over the original
 
 2. **For Terraform / fresh deploys:** the long-term fix is to stop
    relying on `cloud-init` to deliver runtime files via `filebase64`
-   altogether. Per the [decisions log](../docs/decisions.md), `~/agent`
+   altogether. Per the [decisions log](decisions-log.md), `~/agent`
    is now a symlink into `~/bugsy/agent`, which is a `git clone` of the
    repo. A fresh deploy should:
 

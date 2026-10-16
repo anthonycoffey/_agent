@@ -4,12 +4,13 @@
 
 ## Overview
 
-- [Docs README — folder rules, lifecycle, prompts](README.md)
+- [DDD overview — folder rules, lifecycle, prompts](ddd.md)
 - [Index / home](index.md)
 
 ## Specs
 
 - [Plans](specs/plans/)
+    - [2026-10-16 — Session pickup after the 2026-05-22 pause](specs/plans/2026-10-16-session-pickup.md)
     - [2026-05-19 — Post-MCP roadmap](specs/plans/2026-05-19-post-mcp-roadmap.md)
 - [Active specs](specs/active/)
     - [SPEC-WORKFLOW-001 — Secretary email digest](specs/active/SPEC-WORKFLOW-001-secretary-email-digest.md)
@@ -23,6 +24,7 @@
     - [SPEC-MCP-002 — Notion write surfaces for Bugsy (page creation)](specs/archive/SPEC-MCP-002-notion-write-surfaces.md)
     - [SPEC-MCP-003 — Notion full read/write access for Bugsy (all surfaces enabled)](specs/archive/SPEC-MCP-003-notion-full-editing.md)
     - [SPEC-MCP-001 — MCP server fleet for Bugsy's brain (Phase 1.4 cancelled)](specs/archive/SPEC-MCP-001-mcp-server-fleet-for-bugsy.md)
+    - [BUG-AGENT-002 — Agent hits the 10-iteration cap on multi-step Notion tasks](specs/archive/BUG-AGENT-002-agent-hits-iteration-cap-on-multi-step-notion-tasks.md)
 
 ## Templates
 

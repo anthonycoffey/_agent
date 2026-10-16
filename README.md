@@ -45,14 +45,25 @@ Slack-driven interface.
 
 ## Stack
 
-Docker services on the VM:
+Docker services on the VM (full table with images and roles:
+[architecture overview](docs/architecture/overview.md)):
 
-- `agent-postgres` (pgvector/pg16) — `agent`, `n8n`, `langfuse`, `memory` databases
-- `agent-qdrant` — vector store
-- `agent-redis` — cache
+- `agent-postgres` (pgvector/pg16) — app data, n8n's internal DB, chat memory
+- `agent-qdrant` — vector store (`personal_knowledge` collection)
+- `agent-redis` — cache / queue
 - `agent-ollama` — local model runtime (`qwen3:8b`, `nomic-embed-text`)
 - `agent-litellm` — OpenAI-compatible proxy for local + hosted models
 - `agent-openwebui` — chat UI on `:3000`
+- `agent-n8n` — workflow automation + AI Agent runtime; the orchestration layer
+- `agent-cloudflared` — Cloudflare Tunnel; the only public ingress
+- `agent-searxng` — self-hosted metasearch behind the research + lead-gen workflows
+- `agent-mcp-atlassian` / `agent-mcp-github` / `agent-mcp-notion` — MCP servers giving the
+  agent live Jira, GitHub, and Notion tools instead of stale RAG snapshots
+- `agent-aider` — AI coding-agent runner (half-built; nothing drives it yet)
+- `agent-evolution-api` — parked WhatsApp bridge from a retired experiment
+
+Slack is the interface; n8n holds the workflows. Those are documented per-workflow under
+[docs/workflows/](docs/workflows/).
 
 ---
 
@@ -61,14 +72,26 @@ Docker services on the VM:
 ```
 _agent/
 ├── README.md
+├── CLAUDE.md                      project context for AI assistants; current-state source of truth
 ├── agent/                         runtime files; mirrors ~/agent on the VM
 │   ├── docker-compose.yml         the stack
 │   ├── env.template               .env reference
 │   ├── backup.sh                  nightly backup with GCS upload
-│   └── motd                       SSH welcome banner
-├── docs/
-│   ├── decisions.md               major architectural decisions
-│   └── incident-log.md            deploy-time issues and lessons
+│   ├── rag-ingest.sh              POST markdown files → RAG ingest webhook
+│   ├── motd                       SSH welcome banner
+│   ├── aider/                     AI coding-agent runner scripts
+│   ├── litellm/                   model list + proxy settings
+│   ├── n8n/workflows/             workflow JSON (source of truth) + reference generator
+│   ├── postgres/                  init SQL + schema migrations
+│   ├── rag/                       personal-knowledge documents (markdown gitignored)
+│   ├── scripts/                   rag-refresh cron job
+│   └── searxng/                   metasearch config
+├── docs/                          MkDocs Material site — architecture, workflows, operations,
+│                                  reference, and the DDD spec home under docs/specs/
+├── logs/
+│   ├── decisions-log.md           major architectural decisions
+│   ├── incident-log.md            deploy-time issues and lessons
+│   └── plans/                     working plans for in-flight initiatives
 └── tf/
     ├── versions.tf                TF 1.9+, google ~> 6.0, random, cloudinit
     ├── backend.tf                 GCS remote state
@@ -139,7 +162,7 @@ terraform apply "-replace=google_compute_instance.agent"
 
 For the full record of issues hit during initial deployment (cloud-init
 encoding, OS Login user creation, Tailscale SSH on Windows, PowerShell arg
-parsing, secret extraction), see [`docs/incident-log.md`](docs/incident-log.md).
+parsing, secret extraction), see [`logs/incident-log.md`](logs/incident-log.md).
 
 ---
 

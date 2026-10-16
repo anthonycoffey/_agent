@@ -177,7 +177,14 @@ services:
   # ---------- WhatsApp gateway ----------
   #
   # Evolution API — self-hosted WhatsApp gateway (wraps Baileys / WhatsApp Web).
-  # Internal-only by default; n8n calls it at http://evolution-api:8080.
+  #
+  # PARKED: bugsy-whatsapp.json was retired and nothing calls this any more. It
+  # is kept running only so the paired-session state in the evolution-data volume
+  # (and the `evolution` postgres DB) isn't thrown away. If WhatsApp is off the
+  # table for good, remove this service, the evolution-data volume, and the
+  # EVOLUTION_* vars from env.template together.
+  #
+  # Internal-only by default; n8n called it at http://evolution-api:8080.
   # Expose externally via Cloudflare Tunnel only when you need to scan a QR
   # or manage instances from the browser. Persists session state in postgres
   # (database `evolution`) and uses redis db 6 as a cache.
@@ -254,12 +261,16 @@ services:
 
   # ---------- Coding agent layer ----------
   #
-  # Aider — AI coding agent runner. Stays running so n8n can trigger it via
-  # SSH + `docker exec -d agent-aider /agent/run-agent.sh ...` without a
-  # cold-start penalty. Repos must be cloned manually into /workspace before
-  # first use (see agent/aider/entrypoint.sh for the clone command).
-  # Routes LLM calls through LiteLLM so it uses the same models as the rest
-  # of the stack. See docs/workflows/github-agent-pipeline.md.
+  # Aider — AI coding agent runner. HALF-BUILT: the container and its runner
+  # script work, but no n8n workflow drives them yet and it has never run
+  # end-to-end. Write a spec before extending it.
+  #
+  # Stays running so a trigger can `docker exec -d agent-aider
+  # /agent/run-agent.sh ...` without a cold-start penalty. Repos must be cloned
+  # manually into /workspace before first use (see agent/aider/entrypoint.sh
+  # for the clone command). Routes LLM calls through LiteLLM so it uses the same
+  # models as the rest of the stack and holds no provider key of its own.
+  # See docs/architecture/overview.md#aider-coding-agent-runner.
 
   aider:
     image: paulgauthier/aider:latest

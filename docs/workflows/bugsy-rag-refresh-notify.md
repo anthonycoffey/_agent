@@ -8,9 +8,9 @@ n8n_workflows: [bugsy-rag-refresh-notify]
 
 `agent/n8n/workflows/bugsy-rag-refresh-notify.json` — a small notification shim that turns a JSON status payload from the host-side `rag-refresh.sh` cron job into a one-line Slack post in `#mulberry-street`.
 
-This workflow is paired with [`agent/scripts/rag-refresh.sh`](../../agent/scripts/rag-refresh.sh) — the script does all the work (git-pull every source repo, re-run the RAG ingest), then `curl`s here with the result. The workflow itself is intentionally dumb: no business logic, just formatting + posting.
+This workflow is paired with [`agent/scripts/rag-refresh.sh`](https://github.com/anthonycoffey/_agent/blob/main/agent/scripts/rag-refresh.sh) — the script does all the work (git-pull every source repo, re-run the RAG ingest), then `curl`s here with the result. The workflow itself is intentionally dumb: no business logic, just formatting + posting.
 
-See [Daily RAG source-repo refresh](../operations/rag-refresh.md) for the full operational picture (cron install, verification, troubleshooting) and [SPEC-RAG-001](../specs/active/SPEC-RAG-001-daily-source-repo-refresh.md) for the design + decision record.
+See [Daily RAG source-repo refresh](../operations/rag-refresh.md) for the full operational picture (cron install, verification, troubleshooting) and [SPEC-RAG-001](../specs/archive/SPEC-RAG-001-daily-source-repo-refresh.md) for the design + decision record.
 
 ## Pipeline
 
@@ -60,7 +60,7 @@ If the workflow is active but the Slack node fails (channel doesn't exist, crede
 
 ## Node reference: Bugsy — RAG Refresh Notify
 
-> Auto-generated from `agent/n8n/workflows/bugsy-rag-refresh-notify.json` on 2026-05-19. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
+> Auto-generated from `agent/n8n/workflows/bugsy-rag-refresh-notify.json` on 2026-10-16. Run `node agent/n8n/scripts/generate-workflow-reference.mjs` to refresh.
 
 **Active:** `false` · **Nodes:** 3 · **Execution order:** `v1`
 
