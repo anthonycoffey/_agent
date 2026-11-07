@@ -33,7 +33,9 @@ Slack-driven interface.
 
 ## Infrastructure
 
-- **No public IP.** Egress via Cloud NAT; ingress only via Tailscale or IAP SSH.
+- **No public IP.** Egress via Cloud NAT. Nothing inbound is allowed through the firewall except
+  SSH, via Tailscale or IAP. Public HTTP reaches n8n over the Cloudflare Tunnel instead — the
+  tunnel dials *out* from the VM, so it serves traffic without any ingress rule opening a port.
 - **Dedicated VPC** with deny-all firewall + IAP fallback rule.
 - **Shielded VM + OS Login** enabled.
 - **Narrow service account** — `logging.logWriter`, `monitoring.metricWriter`, `secretmanager.secretAccessor`, and `storage.objectUser` on its own backup bucket.
@@ -81,7 +83,9 @@ _agent/
 │   ├── motd                       SSH welcome banner
 │   ├── aider/                     AI coding-agent runner scripts
 │   ├── litellm/                   model list + proxy settings
-│   ├── n8n/workflows/             workflow JSON (source of truth) + reference generator
+│   ├── n8n/
+│   │   ├── workflows/             workflow JSON — the source of truth
+│   │   └── scripts/               workflow-reference doc generator
 │   ├── postgres/                  init SQL + schema migrations
 │   ├── rag/                       personal-knowledge documents (markdown gitignored)
 │   ├── scripts/                   rag-refresh cron job
@@ -175,5 +179,7 @@ When tempted to add something:
 3. Can you imagine reviewing the output daily or weekly?
 4. Does it need an integration you don't already have working?
 
-Yes / yes / yes / no → build it. Otherwise → "someday" list, finish the
-current phase.
+Yes / yes / yes / no → build it. Otherwise it goes on the "someday" list, and
+you finish what's already in flight. What that is at any given moment lives in
+[`CLAUDE.md`](CLAUDE.md) under *Current State & Next Steps*, with the open specs
+under [`docs/specs/active/`](docs/specs/active/).
