@@ -43,6 +43,81 @@ Slack-driven interface.
 - **Boot disk is a separate resource** so the snapshot schedule can attach as a `resource_policy`.
 - **Stack does not auto-start.** cloud-init lays down files and installs Docker; the operator fills API keys in `.env` and runs `docker compose up -d`.
 
+### Topology
+
+Everything runs as Docker containers on one VM, on a single private bridge network. Nothing
+listens on a public address: the only inbound path is the Cloudflare Tunnel, which dials out,
+and all outbound traffic leaves through Cloud NAT.
+
+```mermaid
+flowchart TB
+    operator(["Anthony"])
+
+    subgraph edge["Cloudflare"]
+        tunnel["cloudflared tunnel<br/>n8n.coffey.codes"]
+    end
+
+    subgraph gcp["GCP · dedicated VPC · deny-all ingress"]
+        subgraph vm["agent-vm · Ubuntu · 16 GB · no public IP · docker net agent-net"]
+            host["Ubuntu host<br/>cron: backup 4am · rag-refresh 4am CT"]
+            n8n["agent-n8n :5678<br/>workflows · webhooks · AI Agent runtime"]
+            webui["agent-openwebui :3000"]
+            aider["agent-aider<br/>half-built, nothing drives it"]
+
+            subgraph state["State"]
+                pg[("agent-postgres<br/>agent · n8n · memory")]
+                qdrant[("agent-qdrant<br/>personal_knowledge")]
+                redis[("agent-redis")]
+            end
+
+            subgraph inference["Inference"]
+                litellm["agent-litellm<br/>OpenAI-compatible proxy"]
+                ollama["agent-ollama<br/>qwen3:8b · nomic-embed-text"]
+            end
+
+            subgraph tools["Live tools and search"]
+                mcp["agent-mcp-atlassian<br/>agent-mcp-github<br/>agent-mcp-notion"]
+                searx["agent-searxng"]
+            end
+        end
+
+        gcs[("GCS bucket<br/>nightly backup · daily disk snapshots")]
+        nat["Cloud NAT — egress only"]
+    end
+
+    hosted["Anthropic · OpenAI · Google"]
+    saas["Slack · Gmail · Jira · GitHub · Notion"]
+
+    operator -->|"Slack events · slash commands"| tunnel
+    operator -. "SSH via Tailscale or IAP" .-> host
+    tunnel --> n8n
+
+    n8n --> state
+    n8n --> litellm
+    n8n --> mcp
+    n8n --> searx
+    webui --> litellm
+    litellm --> ollama
+    aider -. "once wired up" .-> litellm
+    host --> gcs
+
+    n8n --> nat
+    litellm --> nat
+    mcp --> nat
+    searx --> nat
+    nat --> hosted
+    nat --> saas
+```
+
+Two things the diagram flattens. Slack sits on both sides of the loop — it delivers events
+inbound through the tunnel and receives Bugsy's replies outbound through Cloud NAT. And the
+4am `rag-refresh` cron posts its summary to `/rag-refresh-notify` over the *public* hostname,
+so that call leaves the VM and comes back in through the tunnel rather than crossing
+`agent-net` directly.
+
+`agent-evolution-api` is on `agent-net` too — a parked WhatsApp bridge from a retired
+experiment, left out above because nothing calls it.
+
 ---
 
 ## Stack
